@@ -43,8 +43,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   const priorityConfig: Record<Priority, { label: string; dot: string; badge: string }> = {
     urgent: {
       label: 'Срочный',
-      dot: 'bg-rose-500',
-      badge: 'bg-rose-500/10 text-rose-500 border-rose-500/20',
+      dot: 'bg-rose-500 animate-pulse',
+      badge: 'bg-rose-500/10 text-rose-500 border-rose-500/30 animate-pulse-glow',
     },
     high: {
       label: 'Высокий',
@@ -93,12 +93,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         e.dataTransfer.setData('taskId', String(task.id));
         e.dataTransfer.effectAllowed = 'move';
       }}
-      className="group relative rounded-2xl bg-white dark:bg-[#13161c] border border-zinc-200 dark:border-white/[0.08] hover:border-zinc-300 dark:hover:border-white/[0.18] shadow-sm hover:shadow-xl dark:hover:shadow-black/50 transition-all duration-200 hover:-translate-y-1 active:scale-[0.99] p-4 space-y-3 cursor-grab active:cursor-grabbing animate-fade-in min-w-0"
+      className="group relative rounded-2xl bg-white dark:bg-[#13161c] border border-zinc-200 dark:border-white/[0.08] hover:border-emerald-500/40 dark:hover:border-emerald-500/40 shadow-sm hover:shadow-2xl dark:hover:shadow-emerald-950/20 transition-all duration-300 ease-out hover:-translate-y-1.5 active:scale-[0.99] p-4 space-y-3 cursor-grab active:cursor-grabbing animate-fade-in min-w-0"
     >
       {/* Top row: Priority & Card Menu */}
       <div className="flex items-center justify-between gap-2">
         <span
-          className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full border ${currentPriority.badge}`}
+          className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full border transition-all ${currentPriority.badge}`}
         >
           <span className={`w-1.5 h-1.5 rounded-full ${currentPriority.dot}`} />
           <span>{currentPriority.label}</span>
@@ -239,9 +239,9 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         <button
           type="button"
           onClick={() => onView(task)}
-          className="text-[11px] font-medium text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors flex items-center gap-1 shrink-0"
+          className="text-[11px] font-medium text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors flex items-center gap-1 shrink-0 active:scale-95"
         >
-          <Eye className="w-3 h-3" />
+          <Eye className="w-3 h-3 transition-transform group-hover:scale-110" />
           <span>Подробнее</span>
         </button>
 
@@ -255,11 +255,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                   e.stopPropagation();
                   onStatusChange(task.id, 'done');
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-sm hover:shadow-md transition-all active:scale-[0.97]"
+                className="group/btn flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-sm hover:shadow-md hover:shadow-emerald-600/30 hover:scale-[1.03] active:scale-95 transition-all duration-200"
                 title="Все подзадачи выполнены — завершить задачу"
               >
                 <span>В готово</span>
-                <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                <Check className="w-3.5 h-3.5 stroke-[2.5] transition-transform group-hover/btn:scale-110" />
               </button>
             ) : (
               <button
@@ -268,11 +268,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                   e.stopPropagation();
                   onStatusChange(task.id, 'in_progress');
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold shadow-sm hover:shadow-md transition-all active:scale-[0.97]"
+                className="group/btn flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold shadow-sm hover:shadow-md hover:shadow-amber-500/30 hover:scale-[1.03] active:scale-95 transition-all duration-200"
                 title="Перевести задачу в работу"
               >
                 <span>В работу</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover/btn:translate-x-0.5" />
               </button>
             )
           )}
@@ -285,10 +285,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                   e.stopPropagation();
                   onStatusChange(task.id, 'todo');
                 }}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.12] text-zinc-600 dark:text-zinc-300 text-xs font-medium transition-all active:scale-[0.97]"
+                className="group/btn flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.12] text-zinc-600 dark:text-zinc-300 text-xs font-medium hover:scale-[1.02] active:scale-95 transition-all duration-200"
                 title="Вернуть задачу назад к выполнению"
               >
-                <ArrowLeft className="w-3 h-3" />
+                <ArrowLeft className="w-3 h-3 transition-transform group-hover/btn:-translate-x-0.5" />
                 <span>К выполнению</span>
               </button>
               <button
@@ -297,11 +297,11 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                   e.stopPropagation();
                   onStatusChange(task.id, 'done');
                 }}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-sm hover:shadow-md transition-all active:scale-[0.97]"
+                className="group/btn flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-sm hover:shadow-md hover:shadow-emerald-600/30 hover:scale-[1.03] active:scale-95 transition-all duration-200"
                 title="Завершить задачу"
               >
                 <span>Готово</span>
-                <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                <Check className="w-3.5 h-3.5 stroke-[2.5] transition-transform group-hover/btn:scale-110" />
               </button>
             </div>
           )}
@@ -313,10 +313,10 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 e.stopPropagation();
                 onStatusChange(task.id, 'in_progress');
               }}
-              className="flex items-center gap-1 px-2.5 py-1 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.12] text-zinc-600 dark:text-zinc-300 text-xs font-medium transition-all"
+              className="group/btn flex items-center gap-1 px-2.5 py-1 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.12] text-zinc-600 dark:text-zinc-300 text-xs font-medium hover:scale-[1.02] active:scale-95 transition-all duration-200"
               title="Вернуть в работу"
             >
-              <RotateCcw className="w-3 h-3" />
+              <RotateCcw className="w-3 h-3 transition-transform group-hover/btn:-rotate-45" />
               <span>Вернуть</span>
             </button>
           )}

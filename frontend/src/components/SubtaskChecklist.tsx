@@ -49,7 +49,7 @@ export const SubtaskChecklist: React.FC<SubtaskChecklistProps> = ({
           </div>
           <div className="w-full h-1.5 bg-zinc-200 dark:bg-white/[0.08] rounded-full overflow-hidden">
             <div
-              className={`h-full transition-all duration-300 rounded-full ${
+              className={`h-full transition-all duration-500 ease-out rounded-full ${
                 progressPercent === 100 ? 'bg-emerald-500' : 'bg-emerald-600 dark:bg-emerald-400'
               }`}
               style={{ width: `${progressPercent}%` }}
@@ -63,7 +63,7 @@ export const SubtaskChecklist: React.FC<SubtaskChecklistProps> = ({
         {subtasks.map((st) => (
           <div
             key={st.id}
-            className="group flex items-center justify-between gap-2 p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition-colors min-w-0 w-full"
+            className="group flex items-center justify-between gap-2 p-1.5 rounded-lg hover:bg-zinc-100/80 dark:hover:bg-white/[0.05] transition-all duration-200 min-w-0 w-full"
           >
             <div
               onClick={() => onToggle(taskId, st.id, st.is_completed)}
@@ -75,20 +75,20 @@ export const SubtaskChecklist: React.FC<SubtaskChecklistProps> = ({
                   onToggle(taskId, st.id, st.is_completed);
                 }
               }}
-              className="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer select-none overflow-hidden"
+              className="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer select-none overflow-hidden active:scale-[0.99] transition-transform"
             >
               <div
-                className={`w-4 h-4 rounded shrink-0 flex items-center justify-center transition-all ${
+                className={`w-4 h-4 rounded shrink-0 flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-90 ${
                   st.is_completed
-                    ? 'bg-emerald-600 text-white border border-emerald-500'
-                    : 'border border-zinc-400 dark:border-zinc-600 hover:border-zinc-600 dark:hover:border-zinc-400 bg-transparent'
+                    ? 'bg-emerald-600 text-white border border-emerald-500 scale-100'
+                    : 'border border-zinc-400 dark:border-zinc-600 hover:border-emerald-500 dark:hover:border-emerald-400 bg-transparent'
                 }`}
               >
-                {st.is_completed && <Check className="w-3 h-3 stroke-[3]" />}
+                {st.is_completed && <Check className="w-3 h-3 stroke-[3] animate-pop-in" />}
               </div>
               <span
                 title={st.title}
-                className={`text-xs leading-snug transition-all min-w-0 flex-1 block ${
+                className={`text-xs leading-snug transition-all duration-200 min-w-0 flex-1 block ${
                   truncateText ? 'truncate' : 'break-words'
                 } ${
                   st.is_completed
@@ -105,7 +105,7 @@ export const SubtaskChecklist: React.FC<SubtaskChecklistProps> = ({
                 e.stopPropagation();
                 onDelete(taskId, st.id);
               }}
-              className="opacity-70 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 text-zinc-400 hover:text-rose-500 p-1 rounded transition-all shrink-0"
+              className="opacity-70 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 text-zinc-400 hover:text-rose-500 active:scale-90 hover:scale-110 p-1 rounded transition-all shrink-0"
               title="Удалить подзадачу"
               aria-label="Удалить подзадачу"
             >

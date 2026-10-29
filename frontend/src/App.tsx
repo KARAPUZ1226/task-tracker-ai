@@ -12,7 +12,7 @@ import { AuthModal } from './components/AuthModal';
 import { BottomToolbar } from './components/BottomToolbar';
 import { Toaster, toast } from 'sonner';
 import confetti from 'canvas-confetti';
-import { Loader2, Circle, Clock, CheckCircle2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
 
 export const App: React.FC = () => {
   const { user, isLoading: authLoading } = useAuth();
@@ -269,75 +269,22 @@ export const App: React.FC = () => {
     done: tasks.filter((t) => t.status === 'done').length,
   };
 
-  const progressTabs: { id: Status; title: string; count: number; icon: React.ReactNode }[] = [
-    {
-      id: 'todo',
-      title: 'К выполнению',
-      count: columnCounts.todo,
-      icon: <Circle className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-zinc-400" />,
-    },
-    {
-      id: 'in_progress',
-      title: 'В работе',
-      count: columnCounts.in_progress,
-      icon: <Clock className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-amber-500 animate-spin-slow" />,
-    },
-    {
-      id: 'done',
-      title: 'Готово',
-      count: columnCounts.done,
-      icon: <CheckCircle2 className="w-4.5 h-4.5 sm:w-5 sm:h-5 text-emerald-500" />,
-    },
-  ];
-
   return (
     <div className="min-h-screen flex flex-col bg-zinc-50 dark:bg-[#090a0f] text-zinc-900 dark:text-zinc-100 transition-colors duration-300">
       <Toaster theme={theme} position="top-right" richColors />
 
-      {/* Navigation with Minimalist Logo, Theme Switcher & 3-stripe Menu */}
-      <Navbar onOpenSettings={() => setIsSettingsOpen(true)} />
+      {/* Navigation with Minimalist Logo, Theme Switcher, Mobile + button & 3-stripe Menu */}
+      <Navbar
+        onOpenSettings={() => setIsSettingsOpen(true)}
+        onOpenCreate={() => {
+          setTaskToEdit(null);
+          setInitialStatus('todo');
+          setIsTaskModalOpen(true);
+        }}
+      />
 
       {/* Main Content */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 relative">
-        {/* Вынесенный в отдельный крупный блок переключатель верхних категорий */}
-        <div className="max-w-2xl mx-auto mb-6 px-1">
-          <div className="grid grid-cols-3 gap-2 sm:gap-2.5 p-2 sm:p-2.5 rounded-2xl bg-white/85 dark:bg-[#12141a]/85 backdrop-blur-xl border border-zinc-200/80 dark:border-white/[0.1] shadow-xl shadow-zinc-900/5">
-            {progressTabs.map((tab) => {
-              const isActive = activeColumn === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  type="button"
-                  onClick={() => {
-                    setActiveColumn(tab.id);
-                    const el = document.getElementById(`column-${tab.id}`);
-                    if (el) {
-                      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-                    }
-                  }}
-                  className={`flex items-center justify-center gap-1.5 sm:gap-2.5 py-3 sm:py-3.5 px-2 sm:px-4 rounded-xl text-xs sm:text-sm md:text-base font-bold transition-all duration-200 ${
-                    isActive
-                      ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 shadow-md scale-[1.02]'
-                      : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-100/70 dark:hover:bg-white/[0.04]'
-                  }`}
-                >
-                  <span className="shrink-0">{tab.icon}</span>
-                  <span className="truncate">{tab.title}</span>
-                  <span
-                    className={`px-2.5 py-0.5 rounded-full text-xs sm:text-sm font-bold shrink-0 transition-colors ${
-                      isActive
-                        ? 'bg-white/20 dark:bg-zinc-900/15 text-white dark:text-zinc-900'
-                        : 'bg-zinc-200/70 dark:bg-white/[0.08] text-zinc-600 dark:text-zinc-300'
-                    }`}
-                  >
-                    {tab.count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
         {loadingTasks ? (
           <div className="h-64 flex items-center justify-center">
             <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
@@ -365,12 +312,21 @@ export const App: React.FC = () => {
         )}
       </main>
 
-      {/* Нижняя плавающая панель: поиск над категориями и кнопка "+" над поиском справа */}
+      {/* Стек полупрозрачных блоков внизу: Поиск -> Приоритеты -> Категории и десктопный FAB */}
       <BottomToolbar
         search={search}
         onSearchChange={setSearch}
         priorityFilter={priorityFilter}
         onPriorityChange={setPriorityFilter}
+        activeColumn={activeColumn}
+        onColumnChange={(status) => {
+          setActiveColumn(status);
+          const el = document.getElementById(`column-${status}`);
+          if (el) {
+            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          }
+        }}
+        columnCounts={columnCounts}
         onOpenCreate={() => {
           setTaskToEdit(null);
           setInitialStatus('todo');

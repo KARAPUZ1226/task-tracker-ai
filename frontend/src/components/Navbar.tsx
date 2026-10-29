@@ -11,10 +11,12 @@ import {
   Moon,
   User,
   Check,
+  Plus,
 } from 'lucide-react';
 
 interface NavbarProps {
   onOpenSettings: () => void;
+  onOpenCreate: () => void;
 }
 
 export const AppLogo: React.FC<{ className?: string }> = ({ className = 'w-6 h-6' }) => (
@@ -43,7 +45,7 @@ export const AppLogo: React.FC<{ className?: string }> = ({ className = 'w-6 h-6
   </svg>
 );
 
-export const Navbar: React.FC<NavbarProps> = ({ onOpenSettings }) => {
+export const Navbar: React.FC<NavbarProps> = ({ onOpenSettings, onOpenCreate }) => {
   const { user, logout, apiKey } = useAuth();
   const { theme, toggleTheme, setTheme } = useTheme();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -67,7 +69,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSettings }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         {/* Brand with Minimalist Logo (Задача 6) */}
         <div className="flex items-center gap-3">
-          <div className="h-9 w-9 rounded-xl bg-zinc-100 dark:bg-[#13161c] border border-zinc-200 dark:border-white/[0.1] flex items-center justify-center shadow-sm">
+          <div className="h-9 w-9 rounded-xl bg-zinc-100 dark:bg-[#13161c] border border-zinc-200 dark:border-white/[0.1] flex items-center justify-center shadow-sm hover:scale-105 transition-transform">
             <AppLogo className="h-5 w-5" />
           </div>
           <div>
@@ -110,6 +112,17 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSettings }) => {
               <span>{apiKey ? 'AI подключен' : 'AI ключ'}</span>
             </button>
           </div>
+
+          {/* Mobile-only '+' Button: строго сверху ТОЛЬКО на мобильных устройствах (<sm) */}
+          <button
+            type="button"
+            onClick={onOpenCreate}
+            className="sm:hidden flex items-center justify-center w-9 h-9 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-90 text-white shadow-md shadow-emerald-600/30 ring-1 ring-white/20 transition-all duration-200 shrink-0"
+            title="Создать новую задачу"
+            aria-label="Создать новую задачу"
+          >
+            <Plus className="w-5 h-5 stroke-[2.5]" />
+          </button>
 
           {/* Three Stripes Hamburger Button (Задача 5) */}
           <div className="relative">
