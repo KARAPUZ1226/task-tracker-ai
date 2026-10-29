@@ -171,7 +171,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
       {/* Title & Description (Click opens Task Details view modal) */}
       <div onClick={() => onView(task)} className="cursor-pointer space-y-1">
         <h4
-          className={`text-sm font-semibold tracking-tight transition-colors hover:text-emerald-600 dark:hover:text-emerald-400 ${
+          className={`text-sm font-semibold tracking-tight transition-colors hover:text-emerald-600 dark:hover:text-emerald-400 break-words ${
             task.status === 'done'
               ? 'line-through text-zinc-400 dark:text-zinc-500'
               : 'text-zinc-900 dark:text-zinc-100'
@@ -180,7 +180,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           {task.title}
         </h4>
         {task.description && (
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2 leading-relaxed">
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2 leading-relaxed break-words">
             {task.description.replace(/###/g, '').replace(/[*#]/g, '').trim()}
           </p>
         )}

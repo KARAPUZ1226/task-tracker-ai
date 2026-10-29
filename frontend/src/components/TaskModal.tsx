@@ -3,6 +3,7 @@ import { Task, Priority, Status } from '../types';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { CustomDeadlinePicker } from './CustomDeadlinePicker';
+import { MarkdownView } from './MarkdownView';
 import { toast } from 'sonner';
 import {
   X,
@@ -15,6 +16,8 @@ import {
   Check,
   Calendar,
   Zap,
+  Eye,
+  Edit3,
 } from 'lucide-react';
 
 interface TaskModalProps {
@@ -48,6 +51,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
   const [deadline, setDeadline] = useState('');
   const [subtasks, setSubtasks] = useState<string[]>([]);
   const [newSubtaskInput, setNewSubtaskInput] = useState('');
+  const [descTab, setDescTab] = useState<'edit' | 'preview'>('edit');
 
   // AI loading states
   const [loadingDecompose, setLoadingDecompose] = useState(false);
@@ -57,6 +61,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    setDescTab('edit');
     if (taskToEdit) {
       setTitle(taskToEdit.title);
       setDescription(taskToEdit.description || '');
@@ -115,6 +120,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
       const res = await api.aiGenerateDescription(title, description, apiKey);
       if (res.description) {
         setDescription(res.description);
+        setDescTab('preview');
         toast.success('Описание задачи успешно сформировано');
       }
     } catch (err: any) {
@@ -389,17 +395,53 @@ export const TaskModal: React.FC<TaskModalProps> = ({
               <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
                 Описание задачи
               </label>
-              <span className="text-[11px] text-zinc-400 dark:text-zinc-500">
-                Поддерживает Markdown (### заголовки, списки)
-              </span>
+              <div className="flex items-center gap-1 bg-zinc-100 dark:bg-[#18181c] p-0.5 rounded-lg border border-zinc-200 dark:border-white/[0.06]">
+                <button
+                  type="button"
+                  onClick={() => setDescTab('edit')}
+                  className={`flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium transition-all ${
+                    descTab === 'edit'
+                      ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-xs font-semibold'
+                      : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-white'
+                  }`}
+                >
+                  <Edit3 className="w-3 h-3" />
+                  <span>Текст</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDescTab('preview')}
+                  className={`flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-medium transition-all ${
+                    descTab === 'preview'
+                      ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-xs font-semibold'
+                      : 'text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-white'
+                  }`}
+                >
+                  <Eye className="w-3 h-3 text-emerald-500" />
+                  <span>Предпросмотр</span>
+                </button>
+              </div>
             </div>
-            <textarea
-              rows={4}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Контекст, детали или критерии выполнения..."
-              className="w-full bg-zinc-100 dark:bg-[#18181c] border border-zinc-300 dark:border-white/[0.08] focus:border-emerald-500 rounded-xl p-3 text-xs text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 outline-none leading-relaxed transition-all resize-y"
-            />
+
+            {descTab === 'edit' ? (
+              <textarea
+                rows={5}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Контекст, детали или критерии выполнения (поддерживает ### заголовки, списки)..."
+                className="w-full bg-zinc-100 dark:bg-[#18181c] border border-zinc-300 dark:border-white/[0.08] focus:border-emerald-500 rounded-xl p-3 text-xs text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 outline-none leading-relaxed transition-all resize-none min-h-[110px]"
+              />
+            ) : (
+              <div className="w-full bg-zinc-50 dark:bg-[#161922] border border-zinc-200 dark:border-white/[0.08] rounded-xl p-3.5 min-h-[110px] overflow-y-auto">
+                {description.trim() ? (
+                  <MarkdownView content={description} />
+                ) : (
+                  <p className="text-xs text-zinc-400 italic">
+                    Текст описания пока пуст. Введите текст во вкладке «Текст» или нажмите кнопку «Описание» в AI инструментах выше.
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Subtasks (available in both create and edit modes) */}

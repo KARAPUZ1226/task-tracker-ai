@@ -277,6 +277,7 @@ export const App: React.FC = () => {
         ) : viewMode === 'kanban' ? (
           <KanbanBoard
             tasks={tasks}
+            statusFilter={statusFilter}
             onViewTask={handleOpenView}
             onEditTask={(task) => {
               setTaskToEdit(task);

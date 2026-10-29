@@ -128,7 +128,7 @@ export const ListView: React.FC<ListViewProps> = ({
             {/* Task Title & Description */}
             <div>
               <h3
-                className={`text-sm sm:text-base font-semibold tracking-tight transition-colors group-hover:text-emerald-600 dark:group-hover:text-emerald-400 ${
+                className={`text-sm sm:text-base font-semibold tracking-tight transition-colors group-hover:text-emerald-600 dark:group-hover:text-emerald-400 break-words ${
                   task.status === 'done'
                     ? 'line-through text-zinc-400 dark:text-zinc-500'
                     : 'text-zinc-900 dark:text-zinc-100'
@@ -137,7 +137,7 @@ export const ListView: React.FC<ListViewProps> = ({
                 {task.title}
               </h3>
               {task.description && (
-                <p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2 mt-1 leading-relaxed">
+                <p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2 mt-1 leading-relaxed break-words">
                   {task.description.replace(/###/g, '').replace(/[*#]/g, '').trim()}
                 </p>
               )}

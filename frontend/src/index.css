@@ -3,8 +3,14 @@
 @tailwind utilities;
 
 @layer base {
+  *, ::before, ::after {
+    transition-property: background-color, border-color, color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 200ms;
+  }
+
   body {
-    @apply antialiased transition-colors duration-300;
+    @apply antialiased;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
   }
 

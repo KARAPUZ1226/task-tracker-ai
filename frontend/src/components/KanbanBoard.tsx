@@ -13,10 +13,12 @@ interface KanbanBoardProps {
   onAddSubtask: (taskId: number, title: string) => void;
   onDeleteSubtask: (taskId: number, subtaskId: number) => void;
   onOpenCreateWithStatus: (status: Status) => void;
+  statusFilter?: Status | 'all';
 }
 
 export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   tasks,
+  statusFilter = 'all',
   onViewTask,
   onEditTask,
   onDeleteTask,
@@ -28,6 +30,12 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
 }) => {
   const [activeMobileColumn, setActiveMobileColumn] = useState<Status>('todo');
   const [dragOverColumn, setDragOverColumn] = useState<Status | null>(null);
+
+  React.useEffect(() => {
+    if (statusFilter && statusFilter !== 'all') {
+      setActiveMobileColumn(statusFilter);
+    }
+  }, [statusFilter]);
 
   const columns: { id: Status; title: string; icon: React.ReactNode; color: string; badge: string }[] = [
     {

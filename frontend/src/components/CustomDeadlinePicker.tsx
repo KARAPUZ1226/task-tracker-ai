@@ -44,9 +44,12 @@ export const CustomDeadlinePicker: React.FC<CustomDeadlinePickerProps> = ({ valu
   };
 
   const [textInput, setTextInput] = useState(() => formatForInput(value));
+  const isFocusedRef = useRef(false);
 
   useEffect(() => {
-    setTextInput(formatForInput(value));
+    if (!isFocusedRef.current) {
+      setTextInput(formatForInput(value));
+    }
     if (value) {
       const d = parseDate(value);
       setViewYear(d.getFullYear());
@@ -106,17 +109,23 @@ export const CustomDeadlinePicker: React.FC<CustomDeadlinePickerProps> = ({ valu
   // Manual typing handler
   const handleTextInputChange = (raw: string) => {
     setTextInput(raw);
-    // Try parse DD.MM.YYYY HH:MM or YYYY-MM-DD
+    if (!raw.trim()) {
+      onChange('');
+      setSelectedDay(null);
+      return;
+    }
+    // Try parse DD.MM.YYYY HH:MM or DD.MM.YYYY
     const match = raw.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})(?:\s+(\d{1,2}):(\d{1,2}))?$/);
     if (match) {
       const day = parseInt(match[1], 10);
       const month = parseInt(match[2], 10) - 1;
       const year = parseInt(match[3], 10);
-      const hours = match[4] ? parseInt(match[4], 10) : 18;
-      const minutes = match[5] ? parseInt(match[5], 10) : 0;
+      const hours = match[4] !== undefined ? parseInt(match[4], 10) : selectedHours;
+      const minutes = match[5] !== undefined ? parseInt(match[5], 10) : selectedMinutes;
       const d = new Date(year, month, day, hours, minutes);
-      if (!isNaN(d.getTime())) {
+      if (!isNaN(d.getTime()) && day >= 1 && day <= 31 && month >= 0 && month <= 11) {
         onChange(d.toISOString());
+        setSelectedDay(day);
       }
     }
   };
@@ -163,7 +172,14 @@ export const CustomDeadlinePicker: React.FC<CustomDeadlinePickerProps> = ({ valu
             type="text"
             value={textInput}
             onChange={(e) => handleTextInputChange(e.target.value)}
-            onFocus={() => setIsOpen(true)}
+            onFocus={() => {
+              isFocusedRef.current = true;
+              setIsOpen(true);
+            }}
+            onBlur={() => {
+              isFocusedRef.current = false;
+              setTextInput(formatForInput(value));
+            }}
             placeholder="ДД.ММ.ГГГГ ЧЧ:ММ (или выберите в окне)"
             className="w-full bg-zinc-100 dark:bg-[#18181c] border border-zinc-300 dark:border-white/[0.08] focus:border-emerald-500 rounded-xl pl-9 pr-8 py-2 text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 outline-none transition-all"
           />
@@ -298,35 +314,86 @@ export const CustomDeadlinePicker: React.FC<CustomDeadlinePickerProps> = ({ valu
             })}
           </div>
 
-          {/* Time Selector */}
-          <div className="pt-2 border-t border-zinc-200 dark:border-white/[0.06] flex items-center justify-between text-xs text-zinc-700 dark:text-zinc-300">
-            <span className="flex items-center gap-1 text-zinc-500 dark:text-zinc-400">
-              <Clock className="w-3.5 h-3.5" /> Время:
-            </span>
-            <div className="flex items-center gap-1">
-              <select
-                value={selectedHours}
-                onChange={(e) => setSelectedHours(Number(e.target.value))}
-                className="bg-zinc-100 dark:bg-[#121215] border border-zinc-200 dark:border-white/[0.08] rounded-md px-1.5 py-0.5 text-xs text-zinc-900 dark:text-zinc-100 outline-none"
-              >
-                {Array.from({ length: 24 }).map((_, h) => (
-                  <option key={h} value={h}>
-                    {String(h).padStart(2, '0')}
-                  </option>
-                ))}
-              </select>
-              <span>:</span>
-              <select
-                value={selectedMinutes}
-                onChange={(e) => setSelectedMinutes(Number(e.target.value))}
-                className="bg-zinc-100 dark:bg-[#121215] border border-zinc-200 dark:border-white/[0.08] rounded-md px-1.5 py-0.5 text-xs text-zinc-900 dark:text-zinc-100 outline-none"
-              >
-                {[0, 15, 30, 45].map((m) => (
-                  <option key={m} value={m}>
-                    {String(m).padStart(2, '0')}
-                  </option>
-                ))}
-              </select>
+          {/* Custom Time Selector (No browser native selects) */}
+          <div className="pt-2.5 border-t border-zinc-200 dark:border-white/[0.08] space-y-2">
+            <div className="flex items-center justify-between text-xs text-zinc-700 dark:text-zinc-300">
+              <span className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400 font-medium">
+                <Clock className="w-3.5 h-3.5 text-emerald-500" /> Время:
+              </span>
+              <div className="flex items-center gap-1.5 bg-zinc-100 dark:bg-[#121215] border border-zinc-200 dark:border-white/[0.08] rounded-xl p-1">
+                {/* Hours stepper */}
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedHours((h) => (h === 0 ? 23 : h - 1))}
+                    className="w-5 h-5 rounded flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-white/[0.08] text-xs font-bold"
+                  >
+                    -
+                  </button>
+                  <span className="w-6 text-center font-mono font-semibold text-xs text-zinc-900 dark:text-zinc-100">
+                    {String(selectedHours).padStart(2, '0')}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedHours((h) => (h === 23 ? 0 : h + 1))}
+                    className="w-5 h-5 rounded flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-white/[0.08] text-xs font-bold"
+                  >
+                    +
+                  </button>
+                </div>
+
+                <span className="text-zinc-400 font-bold">:</span>
+
+                {/* Minutes stepper */}
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setSelectedMinutes((m) => (m === 0 ? 45 : (m - 15 + 60) % 60))}
+                    className="w-5 h-5 rounded flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-white/[0.08] text-xs font-bold"
+                  >
+                    -
+                  </button>
+                  <span className="w-6 text-center font-mono font-semibold text-xs text-zinc-900 dark:text-zinc-100">
+                    {String(selectedMinutes).padStart(2, '0')}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedMinutes((m) => (m === 45 ? 0 : (m + 15) % 60))}
+                    className="w-5 h-5 rounded flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-white/[0.08] text-xs font-bold"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Quick time chips */}
+            <div className="flex items-center justify-between gap-1 pt-0.5">
+              {[
+                { h: 10, m: 0, label: '10:00' },
+                { h: 14, m: 0, label: '14:00' },
+                { h: 18, m: 0, label: '18:00' },
+                { h: 21, m: 0, label: '21:00' },
+              ].map((time) => {
+                const isActive = selectedHours === time.h && selectedMinutes === time.m;
+                return (
+                  <button
+                    key={time.label}
+                    type="button"
+                    onClick={() => {
+                      setSelectedHours(time.h);
+                      setSelectedMinutes(time.m);
+                    }}
+                    className={`flex-1 py-1 rounded-lg text-[11px] font-mono transition-all ${
+                      isActive
+                        ? 'bg-emerald-600 text-white font-bold shadow-xs'
+                        : 'bg-zinc-100 dark:bg-white/[0.04] text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-white/[0.08]'
+                    }`}
+                  >
+                    {time.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
