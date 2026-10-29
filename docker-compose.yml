@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    environment:
+      - SECRET_KEY=supersecretjwtkey_hackathon_task_tracker_2026_x99
+      - DATABASE_URL=sqlite:///./data/tasks.db
+      - GEMINI_API_KEY=AQ.Ab8RN6Ji9D98s9p9MeJ0DLdM220hPidHqneIB78AwK4ubs0_fQ
+      - GEMINI_MODEL=gemini-3.5-flash-lite
+      - OPENAI_API_KEY=
+      - OPENAI_BASE_URL=https://api.openai.com/v1
+      - OPENAI_MODEL=gpt-4o-mini
+    volumes:
+      - backend_data:/app/data
+    expose:
+      - "8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    expose:
+      - "80"
+
+  nginx:
+    image: nginx:alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+      - /var/www/certbot:/var/www/certbot:ro
+    depends_on:
+      - backend
+      - frontend
+
+volumes:
+  backend_data:
