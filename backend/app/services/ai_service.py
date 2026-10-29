@@ -123,30 +123,28 @@ def _heuristic_deadline(title: str, description: Optional[str] = None, priority:
     }
 
 async def _call_gemini(prompt: str, key: str, response_format_json: bool = True) -> Optional[str]:
-    # Fast 5s timeout to ensure high API responsiveness
-    models_to_try = [settings.GEMINI_MODEL, "gemini-flash-lite-latest"]
+    # Single targeted call with 8s timeout for snappy UX
+    url = f"https://generativelanguage.googleapis.com/v1beta/models/{settings.GEMINI_MODEL}:generateContent?key={key}"
     payload: Dict[str, Any] = {
         "contents": [{"parts": [{"text": prompt}]}]
     }
     if response_format_json:
         payload["generationConfig"] = {"responseMimeType": "application/json"}
 
-    for model in models_to_try:
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
-        try:
-            async with httpx.AsyncClient(timeout=6.0) as client:
-                response = await client.post(url, json=payload)
-                if response.status_code == 200:
-                    data = response.json()
-                    candidates = data.get("candidates", [])
-                    if candidates:
-                        parts = candidates[0].get("content", {}).get("parts", [])
-                        if parts:
-                            return parts[0].get("text")
-                else:
-                    logger.warning(f"Gemini {model} returned {response.status_code}")
-        except Exception as e:
-            logger.warning(f"Error calling Gemini {model}: {e}")
+    try:
+        async with httpx.AsyncClient(timeout=8.0) as client:
+            response = await client.post(url, json=payload)
+            if response.status_code == 200:
+                data = response.json()
+                candidates = data.get("candidates", [])
+                if candidates:
+                    parts = candidates[0].get("content", {}).get("parts", [])
+                    if parts:
+                        return parts[0].get("text")
+            else:
+                logger.warning(f"Gemini API returned status {response.status_code}")
+    except Exception as e:
+        logger.warning(f"Gemini call timed out or failed: {e}")
     return None
 
 async def _call_llm(messages: List[Dict[str, str]], api_key: Optional[str] = None, response_format_json: bool = True) -> Optional[str]:
