@@ -61,13 +61,13 @@ export const SubtaskChecklist: React.FC<SubtaskChecklistProps> = ({
         {subtasks.map((st) => (
           <div
             key={st.id}
-            className="group flex items-center justify-between gap-2 p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition-colors"
+            className="group flex items-center justify-between gap-2 p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition-colors min-w-0"
           >
-            <label className="flex items-center gap-2.5 flex-1 cursor-pointer select-none">
+            <label className="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer select-none overflow-hidden">
               <button
                 type="button"
                 onClick={() => onToggle(taskId, st.id, st.is_completed)}
-                className={`w-4 h-4 rounded flex items-center justify-center transition-all ${
+                className={`w-4 h-4 rounded shrink-0 flex items-center justify-center transition-all ${
                   st.is_completed
                     ? 'bg-emerald-600 text-white border border-emerald-500'
                     : 'border border-zinc-400 dark:border-zinc-600 hover:border-zinc-600 dark:hover:border-zinc-400 bg-transparent'
@@ -76,7 +76,8 @@ export const SubtaskChecklist: React.FC<SubtaskChecklistProps> = ({
                 {st.is_completed && <Check className="w-3 h-3 stroke-[3]" />}
               </button>
               <span
-                className={`text-xs leading-snug transition-all ${
+                title={st.title}
+                className={`text-xs leading-snug transition-all truncate min-w-0 flex-1 block ${
                   st.is_completed
                     ? 'line-through text-zinc-400 dark:text-zinc-500'
                     : 'text-zinc-800 dark:text-zinc-200 group-hover:text-zinc-950 dark:group-hover:text-white'
@@ -88,7 +89,7 @@ export const SubtaskChecklist: React.FC<SubtaskChecklistProps> = ({
             <button
               type="button"
               onClick={() => onDelete(taskId, st.id)}
-              className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-rose-500 p-1 transition-all"
+              className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-rose-500 p-1 rounded transition-all shrink-0"
               title="Удалить подзадачу"
             >
               <Trash2 className="w-3 h-3" />
@@ -99,18 +100,18 @@ export const SubtaskChecklist: React.FC<SubtaskChecklistProps> = ({
 
       {/* Add new subtask */}
       {isAdding ? (
-        <form onSubmit={handleSubmit} className="flex items-center gap-2 pt-1">
+        <form onSubmit={handleSubmit} className="flex items-center gap-2 pt-1 min-w-0">
           <input
             type="text"
             value={newTitle}
             onChange={(e) => setNewTitle(e.target.value)}
             placeholder="Название шага..."
             autoFocus
-            className="flex-1 bg-zinc-100 dark:bg-[#0e1015] border border-zinc-300 dark:border-white/[0.1] rounded-lg px-2.5 py-1 text-xs text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 outline-none focus:border-emerald-500"
+            className="flex-1 min-w-0 bg-zinc-100 dark:bg-[#0e1015] border border-zinc-300 dark:border-white/[0.1] rounded-lg px-2.5 py-1 text-xs text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 outline-none focus:border-emerald-500"
           />
           <button
             type="submit"
-            className="px-2.5 py-1 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium"
+            className="px-2.5 py-1 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium shrink-0"
           >
             Добавить
           </button>
@@ -120,7 +121,7 @@ export const SubtaskChecklist: React.FC<SubtaskChecklistProps> = ({
               setIsAdding(false);
               setNewTitle('');
             }}
-            className="px-2 py-1 text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-white"
+            className="px-2 py-1 text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-white shrink-0"
           >
             Отмена
           </button>

@@ -59,7 +59,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   return (
     <div className="space-y-4">
       {/* Grid columns */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start pb-24">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start pb-40">
         {columns.map((col) => {
           const colTasks = getTasksForColumn(col.id);
           const isHiddenOnMobile = activeColumn !== col.id;
@@ -68,6 +68,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
           return (
             <div
               key={col.id}
+              id={`column-${col.id}`}
               onDragOver={(e) => {
                 e.preventDefault();
                 e.dataTransfer.dropEffect = 'move';
@@ -87,7 +88,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                   onStatusChange(droppedTaskId, col.id);
                 }
               }}
-              className={`flex flex-col rounded-2xl bg-zinc-50/50 dark:bg-[#0e1015] border p-4 min-h-[500px] transition-all duration-200 ${
+              className={`flex flex-col rounded-2xl bg-zinc-50/50 dark:bg-[#0e1015] border p-4 min-h-[500px] min-w-0 transition-all duration-200 ${
                 isDropActive
                   ? 'border-emerald-500 bg-emerald-500/5 shadow-lg shadow-emerald-500/10 scale-[1.01]'
                   : col.color
@@ -95,19 +96,19 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
             >
               {/* Column Header */}
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-zinc-200 dark:border-white/[0.06]">
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-w-0">
                   {col.icon}
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
+                  <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-200 truncate">
                     {col.title}
                   </h3>
-                  <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${col.badge}`}>
+                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full shrink-0 ${col.badge}`}>
                     {colTasks.length}
                   </span>
                 </div>
                 <button
                   type="button"
                   onClick={() => onOpenCreateWithStatus(col.id)}
-                  className="p-1 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
+                  className="p-1 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors shrink-0"
                   title="Добавить в эту колонку"
                 >
                   <Plus className="w-4 h-4" />

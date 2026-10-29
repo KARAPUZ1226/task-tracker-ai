@@ -7,6 +7,7 @@ import {
   Edit2,
   Trash2,
   ArrowRight,
+  ArrowLeft,
   Check,
   RotateCcw,
   ChevronDown,
@@ -82,6 +83,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
   const completedSubtasks = task.subtasks?.filter((s) => s.is_completed).length || 0;
   const totalSubtasks = task.subtasks?.length || 0;
+  const allSubtasksDone = totalSubtasks > 0 && completedSubtasks === totalSubtasks;
 
   return (
     <div
@@ -91,7 +93,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         e.dataTransfer.setData('taskId', String(task.id));
         e.dataTransfer.effectAllowed = 'move';
       }}
-      className="group relative rounded-2xl bg-white dark:bg-[#13161c] border border-zinc-200 dark:border-white/[0.08] hover:border-zinc-300 dark:hover:border-white/[0.18] shadow-sm hover:shadow-xl dark:hover:shadow-black/50 transition-all duration-200 hover:-translate-y-1 active:scale-[0.99] p-4 space-y-3 cursor-grab active:cursor-grabbing animate-fade-in"
+      className="group relative rounded-2xl bg-white dark:bg-[#13161c] border border-zinc-200 dark:border-white/[0.08] hover:border-zinc-300 dark:hover:border-white/[0.18] shadow-sm hover:shadow-xl dark:hover:shadow-black/50 transition-all duration-200 hover:-translate-y-1 active:scale-[0.99] p-4 space-y-3 cursor-grab active:cursor-grabbing animate-fade-in min-w-0"
     >
       {/* Top row: Priority & Card Menu */}
       <div className="flex items-center justify-between gap-2">
@@ -242,36 +244,65 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           <span>Подробнее</span>
         </button>
 
-        {/* Задача 2: Заметная кнопка переноса статуса в правом нижнем углу карточки */}
-        <div>
+        {/* Заметные кнопки переноса статуса в правом нижнем углу карточки */}
+        <div className="flex items-center gap-1.5 shrink-0">
           {task.status === 'todo' && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onStatusChange(task.id, 'in_progress');
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold shadow-sm hover:shadow-md transition-all active:scale-[0.97]"
-              title="Перевести задачу в работу"
-            >
-              <span>В работу</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+            allSubtasksDone ? (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStatusChange(task.id, 'done');
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-sm hover:shadow-md transition-all active:scale-[0.97]"
+                title="Все подзадачи выполнены — завершить задачу"
+              >
+                <span>В готово</span>
+                <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStatusChange(task.id, 'in_progress');
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold shadow-sm hover:shadow-md transition-all active:scale-[0.97]"
+                title="Перевести задачу в работу"
+              >
+                <span>В работу</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            )
           )}
 
           {task.status === 'in_progress' && (
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onStatusChange(task.id, 'done');
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-sm hover:shadow-md transition-all active:scale-[0.97]"
-              title="Завершить задачу"
-            >
-              <span>Готово</span>
-              <Check className="w-3.5 h-3.5 stroke-[2.5]" />
-            </button>
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStatusChange(task.id, 'todo');
+                }}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.12] text-zinc-600 dark:text-zinc-300 text-xs font-medium transition-all active:scale-[0.97]"
+                title="Вернуть задачу назад к выполнению"
+              >
+                <ArrowLeft className="w-3 h-3" />
+                <span>К выполнению</span>
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStatusChange(task.id, 'done');
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-sm hover:shadow-md transition-all active:scale-[0.97]"
+                title="Завершить задачу"
+              >
+                <span>Готово</span>
+                <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+              </button>
+            </div>
           )}
 
           {task.status === 'done' && (

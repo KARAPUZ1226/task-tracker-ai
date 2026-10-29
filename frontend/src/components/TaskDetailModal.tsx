@@ -9,6 +9,7 @@ import {
   Calendar,
   AlertCircle,
   ArrowRight,
+  ArrowLeft,
   CheckCircle2,
   RotateCcw,
   Sparkles,
@@ -95,6 +96,10 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
       isOverdue = d.getTime() < Date.now() && task.status !== 'done';
     }
   }
+
+  const completedSubs = task.subtasks?.filter((s) => s.is_completed).length || 0;
+  const totalSubs = task.subtasks?.length || 0;
+  const allSubtasksDone = totalSubs > 0 && completedSubs === totalSubs;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
@@ -205,29 +210,56 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
           {/* Status action */}
           <div className="flex items-center gap-2">
             {task.status === 'todo' && (
-              <button
-                onClick={() => {
-                  onStatusChange(task.id, 'in_progress');
-                  onClose();
-                }}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium shadow-md shadow-amber-500/20 transition-all active:scale-[0.98]"
-              >
-                <span>Перевести в работу</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
+              allSubtasksDone ? (
+                <button
+                  onClick={() => {
+                    onStatusChange(task.id, 'done');
+                    onClose();
+                  }}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md shadow-emerald-500/20 transition-all active:scale-[0.98]"
+                  title="Все подзадачи выполнены — завершить задачу"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>В готово</span>
+                </button>
+              ) : (
+                <button
+                  onClick={() => {
+                    onStatusChange(task.id, 'in_progress');
+                    onClose();
+                  }}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium shadow-md shadow-amber-500/20 transition-all active:scale-[0.98]"
+                >
+                  <span>Перевести в работу</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              )
             )}
 
             {task.status === 'in_progress' && (
-              <button
-                onClick={() => {
-                  onStatusChange(task.id, 'done');
-                  onClose();
-                }}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium shadow-md shadow-emerald-500/20 transition-all active:scale-[0.98]"
-              >
-                <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>Завершить задачу</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    onStatusChange(task.id, 'todo');
+                    onClose();
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.12] text-zinc-700 dark:text-zinc-200 text-xs font-medium transition-all"
+                  title="Вернуть задачу к выполнению"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>К выполнению</span>
+                </button>
+                <button
+                  onClick={() => {
+                    onStatusChange(task.id, 'done');
+                    onClose();
+                  }}
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium shadow-md shadow-emerald-500/20 transition-all active:scale-[0.98]"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5" />
+                  <span>Завершить задачу</span>
+                </button>
+              </div>
             )}
 
             {task.status === 'done' && (

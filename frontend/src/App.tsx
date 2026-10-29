@@ -10,10 +10,9 @@ import { TaskDetailModal } from './components/TaskDetailModal';
 import { SettingsModal } from './components/SettingsModal';
 import { AuthModal } from './components/AuthModal';
 import { BottomToolbar } from './components/BottomToolbar';
-import { FloatingAddButton } from './components/FloatingAddButton';
 import { Toaster, toast } from 'sonner';
 import confetti from 'canvas-confetti';
-import { Loader2, Search, X } from 'lucide-react';
+import { Loader2, Circle, Clock, CheckCircle2 } from 'lucide-react';
 
 export const App: React.FC = () => {
   const { user, isLoading: authLoading } = useAuth();
@@ -256,7 +255,32 @@ export const App: React.FC = () => {
     );
   }
 
-  const completedCount = tasks.filter((t) => t.status === 'done').length;
+  const columnCounts = {
+    todo: tasks.filter((t) => t.status === 'todo').length,
+    in_progress: tasks.filter((t) => t.status === 'in_progress').length,
+    done: tasks.filter((t) => t.status === 'done').length,
+  };
+
+  const progressTabs: { id: Status; title: string; count: number; icon: React.ReactNode }[] = [
+    {
+      id: 'todo',
+      title: 'К выполнению',
+      count: columnCounts.todo,
+      icon: <Circle className="w-4 h-4 text-zinc-400" />,
+    },
+    {
+      id: 'in_progress',
+      title: 'В работе',
+      count: columnCounts.in_progress,
+      icon: <Clock className="w-4 h-4 text-amber-500 animate-spin-slow" />,
+    },
+    {
+      id: 'done',
+      title: 'Готово',
+      count: columnCounts.done,
+      icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" />,
+    },
+  ];
 
   return (
     <div className="min-h-screen flex flex-col bg-zinc-50 dark:bg-[#090a0f] text-zinc-900 dark:text-zinc-100 transition-colors duration-300">
@@ -267,27 +291,42 @@ export const App: React.FC = () => {
 
       {/* Main Content */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 relative">
-        {/* Плавающий аккуратный островок поиска вверху экрана (под шапкой по центру) */}
-        <div className="flex justify-center mb-6">
-          <div className="relative flex items-center bg-white/80 dark:bg-[#12141a]/80 backdrop-blur-xl border border-zinc-200/80 dark:border-white/[0.1] rounded-2xl shadow-lg shadow-zinc-900/5 px-4 py-2 w-full max-w-md focus-within:ring-2 focus-within:ring-emerald-500/40 focus-within:border-emerald-500 transition-all duration-200">
-            <Search className="w-4 h-4 text-zinc-400 dark:text-zinc-500 mr-2.5 shrink-0" />
-            <input
-              type="text"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Поиск задач..."
-              className="w-full bg-transparent text-xs sm:text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 outline-none"
-            />
-            {search && (
-              <button
-                type="button"
-                onClick={() => setSearch('')}
-                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-0.5 rounded-md transition-colors"
-                title="Очистить поиск"
-              >
-                <X className="w-3.5 h-3.5" />
-              </button>
-            )}
+        {/* Вынесенный в отдельный крупный блок переключатель верхних категорий */}
+        <div className="max-w-2xl mx-auto mb-6 px-1">
+          <div className="grid grid-cols-3 gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-2xl bg-white/80 dark:bg-[#12141a]/80 backdrop-blur-xl border border-zinc-200/80 dark:border-white/[0.1] shadow-lg shadow-zinc-900/5">
+            {progressTabs.map((tab) => {
+              const isActive = activeColumn === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => {
+                    setActiveColumn(tab.id);
+                    const el = document.getElementById(`column-${tab.id}`);
+                    if (el) {
+                      el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                    }
+                  }}
+                  className={`flex items-center justify-center gap-1.5 sm:gap-2.5 py-2.5 sm:py-3 px-2 sm:px-4 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 ${
+                    isActive
+                      ? 'bg-zinc-900 text-white dark:bg-white dark:text-zinc-900 shadow-md scale-[1.02]'
+                      : 'text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white hover:bg-zinc-100/70 dark:hover:bg-white/[0.04]'
+                  }`}
+                >
+                  <span className="shrink-0">{tab.icon}</span>
+                  <span className="truncate">{tab.title}</span>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-xs font-bold shrink-0 transition-colors ${
+                      isActive
+                        ? 'bg-white/20 dark:bg-zinc-900/15 text-white dark:text-zinc-900'
+                        : 'bg-zinc-200/70 dark:bg-white/[0.08] text-zinc-600 dark:text-zinc-300'
+                    }`}
+                  >
+                    {tab.count}
+                  </span>
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -318,22 +357,13 @@ export const App: React.FC = () => {
         )}
       </main>
 
-      {/* Нижняя плавающая панель (вкладки прогресса задачи с Фото 3 + приоритеты) */}
+      {/* Нижняя плавающая панель: поиск над категориями и кнопка "+" над поиском справа */}
       <BottomToolbar
-        activeColumn={activeColumn}
-        onSelectColumn={setActiveColumn}
-        columnCounts={{
-          todo: tasks.filter((t) => t.status === 'todo').length,
-          in_progress: tasks.filter((t) => t.status === 'in_progress').length,
-          done: tasks.filter((t) => t.status === 'done').length,
-        }}
+        search={search}
+        onSearchChange={setSearch}
         priorityFilter={priorityFilter}
         onPriorityChange={setPriorityFilter}
-      />
-
-      {/* Фото 1: Крупный плавающий FAB плюсик в правом нижнем углу */}
-      <FloatingAddButton
-        onClick={() => {
+        onOpenCreate={() => {
           setTaskToEdit(null);
           setInitialStatus('todo');
           setIsTaskModalOpen(true);
