@@ -8,6 +8,8 @@ from app.schemas import (
     AIDescriptionResponse,
     AIDeadlineRequest,
     AIDeadlineResponse,
+    AIPrioritizeRequest,
+    AIPrioritizeResponse,
 )
 from app.services.ai_service import AIService
 
@@ -44,5 +46,16 @@ async def suggest_deadline(
         title=payload.title,
         description=payload.description,
         priority=payload.priority,
+        api_key=payload.api_key,
+    )
+
+@router.post("/prioritize", response_model=AIPrioritizeResponse, summary="AI приоритизация задачи по контексту")
+async def prioritize_task(
+    payload: AIPrioritizeRequest,
+    current_user: User = Depends(get_current_user),
+):
+    return await AIService.prioritize(
+        title=payload.title,
+        description=payload.description,
         api_key=payload.api_key,
     )

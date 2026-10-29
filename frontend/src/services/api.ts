@@ -8,6 +8,7 @@ import {
   AIDecomposeResponse,
   AIDescriptionResponse,
   AIDeadlineResponse,
+  AIPrioritizeResponse,
   Priority,
   Status
 } from '../types';
@@ -151,6 +152,13 @@ export const api = {
     return request<AIDeadlineResponse>('/ai/suggest-deadline', {
       method: 'POST',
       body: JSON.stringify({ title, description, priority, api_key: apiKey || undefined }),
+    });
+  },
+
+  async aiPrioritize(title: string, description?: string, apiKey?: string): Promise<AIPrioritizeResponse> {
+    return request<AIPrioritizeResponse>('/ai/prioritize', {
+      method: 'POST',
+      body: JSON.stringify({ title, description, api_key: apiKey || undefined }),
     });
   },
 };

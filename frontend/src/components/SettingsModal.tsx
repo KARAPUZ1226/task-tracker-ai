@@ -40,13 +40,13 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
         <form onSubmit={handleSave} className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-zinc-300 mb-1.5">
-              OpenAI / Groq / OpenRouter API Key (опционально)
+              Google Gemini / OpenAI API Key (опционально)
             </label>
             <input
               type="password"
               value={keyInput}
               onChange={(e) => setKeyInput(e.target.value)}
-              placeholder="sk-..."
+              placeholder="AIza... или sk-..."
               className="w-full bg-[#18181c] border border-white/[0.08] focus:border-brand-500 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-zinc-500 outline-none transition-all font-mono"
             />
           </div>

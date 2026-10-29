@@ -224,3 +224,55 @@ def test_ai_endpoints(client):
     assert "suggested_deadline" in dl_data
     assert dl_data["estimated_days"] >= 1
     assert "reasoning" in dl_data
+
+    # 4. Prioritize
+    res_prio = client.post("/api/ai/prioritize", headers=headers, json={
+        "title": "Критическая уязвимость в auth модуле",
+        "description": "Срочный фикс авторизации"
+    })
+    assert res_prio.status_code == 200
+    prio_data = res_prio.json()
+    assert prio_data["suggested_priority"] in ["urgent", "high", "medium", "low"]
+    assert "reasoning" in prio_data
+
+def test_edge_cases_and_field_clearing(client):
+    reg = client.post("/api/auth/register", json={
+        "email": "user5@example.com",
+        "password": "password5"
+    })
+    token = reg.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # 1. Reject empty or whitespace-only title on create
+    bad_task = client.post("/api/tasks", headers=headers, json={
+        "title": "   "
+    })
+    assert bad_task.status_code in [400, 422]
+
+    # 2. Create valid task with description & deadline
+    good_task = client.post("/api/tasks", headers=headers, json={
+        "title": "Тестовая задача для очистки полей",
+        "description": "Исходное описание",
+        "deadline": "2026-11-01T10:00:00Z"
+    })
+    assert good_task.status_code == 201
+    tid = good_task.json()["id"]
+
+    # 3. Reject empty or whitespace title on patch
+    bad_patch = client.patch(f"/api/tasks/{tid}", headers=headers, json={
+        "title": "   "
+    })
+    assert bad_patch.status_code in [400, 422]
+
+    # 4. Clear description and deadline by sending null
+    clear_patch = client.patch(f"/api/tasks/{tid}", headers=headers, json={
+        "description": None,
+        "deadline": None,
+        "subtasks": ["Новая подзадача через patch"]
+    })
+    assert clear_patch.status_code == 200
+    cleared = clear_patch.json()
+    assert cleared["description"] is None
+    assert cleared["deadline"] is None
+    assert len(cleared["subtasks"]) == 1
+    assert cleared["subtasks"][0]["title"] == "Новая подзадача через patch"

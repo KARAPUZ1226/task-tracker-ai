@@ -7,10 +7,12 @@ engine = create_engine(
     connect_args={"check_same_thread": False} if "sqlite" in settings.DATABASE_URL else {}
 )
 
+from sqlalchemy.engine import Engine
+
 # Enable foreign keys for SQLite
-if "sqlite" in settings.DATABASE_URL:
-    @event.listens_for(engine, "connect")
-    def set_sqlite_pragma(dbapi_connection, connection_record):
+@event.listens_for(Engine, "connect")
+def set_sqlite_pragma(dbapi_connection, connection_record):
+    if "sqlite" in type(dbapi_connection).__module__:
         cursor = dbapi_connection.cursor()
         cursor.execute("PRAGMA foreign_keys=ON")
         cursor.close()

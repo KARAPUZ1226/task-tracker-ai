@@ -14,6 +14,7 @@ import {
   Trash2,
   Check,
   AlertTriangle,
+  Zap,
 } from 'lucide-react';
 
 interface TaskModalProps {
@@ -23,10 +24,10 @@ interface TaskModalProps {
   initialStatus?: Status;
   onSave: (taskData: {
     title: string;
-    description?: string;
+    description?: string | null;
     priority: Priority;
     status?: Status;
-    deadline?: string;
+    deadline?: string | null;
     subtasks?: string[];
   }) => Promise<void>;
 }
@@ -52,6 +53,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
   const [loadingDecompose, setLoadingDecompose] = useState(false);
   const [loadingDescription, setLoadingDescription] = useState(false);
   const [loadingDeadline, setLoadingDeadline] = useState(false);
+  const [loadingPrioritize, setLoadingPrioritize] = useState(false);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -162,6 +164,30 @@ export const TaskModal: React.FC<TaskModalProps> = ({
     }
   };
 
+  // AI Handler: Suggest Priority
+  const handleAIPrioritize = async () => {
+    if (!title.trim()) {
+      toast.error('Введите название задачи для оценки приоритета');
+      return;
+    }
+    setLoadingPrioritize(true);
+    try {
+      const res = await api.aiPrioritize(title, description, apiKey);
+      if (res.suggested_priority) {
+        setPriority(res.suggested_priority);
+        toast.success(
+          res.is_fallback
+            ? `Рекомендованный приоритет: ${res.suggested_priority.toUpperCase()}`
+            : `AI определил приоритет: ${res.suggested_priority.toUpperCase()} (${res.reasoning})`
+        );
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Ошибка анализа приоритета');
+    } finally {
+      setLoadingPrioritize(false);
+    }
+  };
+
   const handleAddSubtask = () => {
     if (newSubtaskInput.trim()) {
       setSubtasks([...subtasks, newSubtaskInput.trim()]);
@@ -183,11 +209,11 @@ export const TaskModal: React.FC<TaskModalProps> = ({
     try {
       await onSave({
         title: title.trim(),
-        description: description.trim() || undefined,
+        description: description.trim() ? description.trim() : (taskToEdit ? null : undefined),
         priority,
         status,
-        deadline: deadline ? new Date(deadline).toISOString() : undefined,
-        subtasks: !taskToEdit ? subtasks : undefined, // initial subtasks for new task
+        deadline: deadline ? new Date(deadline).toISOString() : (taskToEdit ? null : undefined),
+        subtasks: subtasks,
       });
       onClose();
     } catch (err: any) {
@@ -232,7 +258,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
               </div>
               <span className="text-[10px] text-zinc-400">Нажмите кнопку для автогенерации</span>
             </div>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 pt-1">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
               <button
                 type="button"
                 onClick={handleAIDecompose}
@@ -258,7 +284,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
                 ) : (
                   <FileText className="w-3.5 h-3.5 text-indigo-400" />
                 )}
-                <span>Сгенерировать описание</span>
+                <span>Описание</span>
               </button>
 
               <button
@@ -272,7 +298,21 @@ export const TaskModal: React.FC<TaskModalProps> = ({
                 ) : (
                   <Calendar className="w-3.5 h-3.5 text-purple-400" />
                 )}
-                <span>Рассчитать дедлайн</span>
+                <span>Срок дедлайна</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleAIPrioritize}
+                disabled={loadingPrioritize}
+                className="flex items-center justify-center gap-1.5 py-1.5 px-3 rounded-lg bg-amber-600/20 hover:bg-amber-600/30 border border-amber-500/30 text-amber-300 text-xs font-medium transition-all disabled:opacity-50"
+              >
+                {loadingPrioritize ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <Zap className="w-3.5 h-3.5 text-amber-400" />
+                )}
+                <span>Приоритет</span>
               </button>
             </div>
           </div>
@@ -350,59 +390,58 @@ export const TaskModal: React.FC<TaskModalProps> = ({
             />
           </div>
 
-          {/* Subtasks (for new task creation) */}
-          {!taskToEdit && (
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-medium text-zinc-300">
-                  Подзадачи чеклиста ({subtasks.length})
-                </label>
-              </div>
-
-              {subtasks.length > 0 && (
-                <div className="space-y-1.5 mb-2 max-h-40 overflow-y-auto pr-1">
-                  {subtasks.map((st, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center justify-between gap-2 p-2 rounded-lg bg-[#18181c] border border-white/[0.06] text-xs text-zinc-300"
-                    >
-                      <span className="flex-1 truncate">{i + 1}. {st}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveSubtask(i)}
-                        className="text-zinc-500 hover:text-red-400 p-0.5"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="text"
-                  value={newSubtaskInput}
-                  onChange={(e) => setNewSubtaskInput(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter') {
-                      e.preventDefault();
-                      handleAddSubtask();
-                    }
-                  }}
-                  placeholder="Добавить подзадачу вручную..."
-                  className="flex-1 bg-[#18181c] border border-white/[0.08] rounded-xl px-3 py-1.5 text-xs text-white placeholder-zinc-500 outline-none focus:border-brand-500"
-                />
-                <button
-                  type="button"
-                  onClick={handleAddSubtask}
-                  className="px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-xs text-zinc-200 font-medium transition-all"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                </button>
-              </div>
+          {/* Subtasks (available in both create and edit modes) */}
+          <div>
+            <div className="flex items-center justify-between mb-2">
+              <label className="text-xs font-medium text-zinc-300">
+                Подзадачи чеклиста ({subtasks.length})
+              </label>
+              <span className="text-[11px] text-zinc-500">Автозаполнение по кнопке AI Декомпозировать</span>
             </div>
-          )}
+
+            {subtasks.length > 0 && (
+              <div className="space-y-1.5 mb-2 max-h-44 overflow-y-auto pr-1">
+                {subtasks.map((st, i) => (
+                  <div
+                    key={i}
+                    className="flex items-center justify-between gap-2 p-2 rounded-lg bg-[#18181c] border border-white/[0.06] text-xs text-zinc-300"
+                  >
+                    <span className="flex-1 truncate">{i + 1}. {st}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveSubtask(i)}
+                      className="text-zinc-500 hover:text-red-400 p-0.5"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <div className="flex items-center gap-2">
+              <input
+                type="text"
+                value={newSubtaskInput}
+                onChange={(e) => setNewSubtaskInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleAddSubtask();
+                  }
+                }}
+                placeholder="Добавить пункт подзадачи вручную..."
+                className="flex-1 bg-[#18181c] border border-white/[0.08] rounded-xl px-3 py-1.5 text-xs text-white placeholder-zinc-500 outline-none focus:border-brand-500"
+              />
+              <button
+                type="button"
+                onClick={handleAddSubtask}
+                className="px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-xs text-zinc-200 font-medium transition-all"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
 
           {/* Footer Actions */}
           <div className="flex items-center justify-end gap-3 pt-4 border-t border-white/[0.08]">

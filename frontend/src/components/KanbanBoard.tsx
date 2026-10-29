@@ -26,6 +26,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
 }) => {
   // Mobile column active tab
   const [activeMobileColumn, setActiveMobileColumn] = useState<Status>('todo');
+  const [dragOverColumn, setDragOverColumn] = useState<Status | null>(null);
 
   const columns: { id: Status; title: string; icon: React.ReactNode; color: string; badge: string }[] = [
     {
@@ -81,13 +82,34 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
         {columns.map((col) => {
           const colTasks = getTasksForColumn(col.id);
           const isHiddenOnMobile = activeMobileColumn !== col.id;
+          const isDropActive = dragOverColumn === col.id;
 
           return (
             <div
               key={col.id}
-              className={`flex flex-col rounded-2xl bg-[#0e0e11] border ${col.color} p-4 min-h-[500px] transition-all ${
-                isHiddenOnMobile ? 'hidden md:flex' : 'flex'
-              }`}
+              onDragOver={(e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'move';
+                if (dragOverColumn !== col.id) setDragOverColumn(col.id);
+              }}
+              onDragLeave={(e) => {
+                // Only unset if leaving the column container
+                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+                  setDragOverColumn(null);
+                }
+              }}
+              onDrop={(e) => {
+                e.preventDefault();
+                setDragOverColumn(null);
+                const rawId = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('taskId');
+                const droppedTaskId = Number(rawId);
+                if (droppedTaskId) {
+                  onStatusChange(droppedTaskId, col.id);
+                }
+              }}
+              className={`flex flex-col rounded-2xl bg-[#0e0e11] border p-4 min-h-[500px] transition-all duration-200 ${
+                isDropActive ? 'border-brand-500 bg-brand-950/10 shadow-lg shadow-brand-500/10 scale-[1.01]' : col.color
+              } ${isHiddenOnMobile ? 'hidden md:flex' : 'flex'}`}
             >
               {/* Column Header */}
               <div className="flex items-center justify-between pb-3 mb-3 border-b border-white/[0.06]">

@@ -78,7 +78,15 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   }
 
   return (
-    <div className="group relative rounded-xl bg-[#121215] border border-white/[0.08] hover:border-white/[0.18] shadow-sm hover:shadow-lg hover:shadow-black/40 transition-all duration-200 p-4 space-y-3">
+    <div
+      draggable={true}
+      onDragStart={(e) => {
+        e.dataTransfer.setData('text/plain', String(task.id));
+        e.dataTransfer.setData('taskId', String(task.id));
+        e.dataTransfer.effectAllowed = 'move';
+      }}
+      className="group relative rounded-xl bg-[#121215] border border-white/[0.08] hover:border-white/[0.18] shadow-sm hover:shadow-lg hover:shadow-black/40 transition-all duration-200 p-4 space-y-3 cursor-grab active:cursor-grabbing"
+    >
       {/* Top row: Priority & Actions */}
       <div className="flex items-center justify-between gap-2">
         <span
@@ -144,7 +152,44 @@ export const TaskCard: React.FC<TaskCardProps> = ({
             {menuOpen && (
               <>
                 <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
-                <div className="absolute right-0 top-6 z-20 w-36 rounded-xl bg-[#1c1c21] border border-white/[0.1] shadow-xl py-1 text-xs">
+                <div className="absolute right-0 top-6 z-20 w-44 rounded-xl bg-[#1c1c21] border border-white/[0.1] shadow-xl py-1 text-xs">
+                  <div className="px-3 py-1 text-[10px] text-zinc-500 font-semibold uppercase tracking-wider border-b border-white/[0.06]">
+                    Статус
+                  </div>
+                  {task.status !== 'todo' && (
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        onStatusChange(task.id, 'todo');
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-zinc-400 hover:text-white hover:bg-white/[0.06]"
+                    >
+                      → В To Do
+                    </button>
+                  )}
+                  {task.status !== 'in_progress' && (
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        onStatusChange(task.id, 'in_progress');
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-amber-400 hover:bg-white/[0.06]"
+                    >
+                      → В работу
+                    </button>
+                  )}
+                  {task.status !== 'done' && (
+                    <button
+                      onClick={() => {
+                        setMenuOpen(false);
+                        onStatusChange(task.id, 'done');
+                      }}
+                      className="w-full text-left px-3 py-1.5 text-emerald-400 hover:bg-white/[0.06]"
+                    >
+                      → В готово
+                    </button>
+                  )}
+                  <div className="my-1 border-t border-white/[0.06]" />
                   <button
                     onClick={() => {
                       setMenuOpen(false);

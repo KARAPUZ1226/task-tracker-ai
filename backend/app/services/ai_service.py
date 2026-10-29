@@ -10,6 +10,7 @@ from app.schemas import (
     AIDecomposeResponse,
     AIDescriptionResponse,
     AIDeadlineResponse,
+    AIPrioritizeResponse,
     PriorityType,
 )
 
@@ -122,8 +123,30 @@ def _heuristic_deadline(title: str, description: Optional[str] = None, priority:
         "reasoning": reason
     }
 
+def _heuristic_prioritize(title: str, description: Optional[str] = None) -> Dict[str, Any]:
+    combined = f"{title} {description or ''}".lower()
+    if any(k in combined for k in ["блокер", "prod", "критич", "срочн", "fall", "пада", "drop", "broken", "security", "уязвимост", "auth fail", "авари"]):
+        return {
+            "suggested_priority": "urgent",
+            "reasoning": "Критическая проблема, блокирующая работу сервиса или затрагивающая безопасность данных."
+        }
+    if any(k in combined for k in ["api", "auth", "backend", "база", "database", "миграци", "release", "релиз", "важн", "деплой", "deploy", "тест"]):
+        return {
+            "suggested_priority": "high",
+            "reasoning": "Ключевая задача базовой функциональности или инфраструктуры проекта с высоким влиянием."
+        }
+    if any(k in combined for k in ["дизайн", "документ", "readme", "стил", "рефактор", "cleanup", "коммент", "иконк", "ui polish"]):
+        return {
+            "suggested_priority": "low",
+            "reasoning": "Косметические улучшения, документация или неблокирующий рефакторинг в плановом режиме."
+        }
+    return {
+        "suggested_priority": "medium",
+        "reasoning": "Стандартная продуктовая задача регулярной разработки умеренной сложности."
+    }
+
 async def _call_gemini(prompt: str, key: str, response_format_json: bool = True) -> Optional[str]:
-    # Single targeted call with 8s timeout for snappy UX
+    # Targeted call with 3.5s timeout for snappy UX
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{settings.GEMINI_MODEL}:generateContent?key={key}"
     payload: Dict[str, Any] = {
         "contents": [{"parts": [{"text": prompt}]}]
@@ -132,7 +155,7 @@ async def _call_gemini(prompt: str, key: str, response_format_json: bool = True)
         payload["generationConfig"] = {"responseMimeType": "application/json"}
 
     try:
-        async with httpx.AsyncClient(timeout=8.0) as client:
+        async with httpx.AsyncClient(timeout=3.5) as client:
             response = await client.post(url, json=payload)
             if response.status_code == 200:
                 data = response.json()
@@ -148,7 +171,7 @@ async def _call_gemini(prompt: str, key: str, response_format_json: bool = True)
     return None
 
 async def _call_llm(messages: List[Dict[str, str]], api_key: Optional[str] = None, response_format_json: bool = True) -> Optional[str]:
-    # Check if Gemini key is provided (either via settings or user input starting with AQ.)
+    # Check if Gemini key is provided (either via settings or user input starting with AQ. or AIza)
     gemini_key = None
     if api_key and (api_key.startswith("AQ.") or "AIza" in api_key):
         gemini_key = api_key
@@ -180,7 +203,7 @@ async def _call_llm(messages: List[Dict[str, str]], api_key: Optional[str] = Non
         payload["response_format"] = {"type": "json_object"}
 
     try:
-        async with httpx.AsyncClient(timeout=12.0) as client:
+        async with httpx.AsyncClient(timeout=4.0) as client:
             response = await client.post(url, headers=headers, json=payload)
             if response.status_code == 200:
                 data = response.json()
@@ -308,6 +331,46 @@ class AIService:
         return AIDeadlineResponse(
             suggested_deadline=res["suggested_deadline"],
             estimated_days=res["estimated_days"],
+            reasoning=res["reasoning"],
+            is_fallback=True
+        )
+
+    @staticmethod
+    async def prioritize(title: str, description: Optional[str] = None, api_key: Optional[str] = None) -> AIPrioritizeResponse:
+        system_prompt = (
+            "Ты — опытный инженер и project manager. Оцени приоритет указанной задачи (low, medium, high или urgent) на основе ее критичности и влияния. "
+            "Ответь СТРОГО в формате JSON:\n"
+            "{\n"
+            '  "suggested_priority": "low" | "medium" | "high" | "urgent",\n'
+            '  "reasoning": "Краткое обоснование выбора приоритета"\n'
+            "}"
+        )
+        user_prompt = f"Задача: {title}\nОписание: {description or 'нет'}"
+
+        raw_res = await _call_llm([
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ], api_key=api_key, response_format_json=True)
+
+        if raw_res:
+            try:
+                parsed = json.loads(raw_res)
+                prio = parsed.get("suggested_priority", "medium")
+                if prio not in ["low", "medium", "high", "urgent"]:
+                    prio = "medium"
+                reasoning = parsed.get("reasoning", "Приоритет оценен AI на основе контекста").strip()
+                return AIPrioritizeResponse(
+                    suggested_priority=prio,
+                    reasoning=reasoning,
+                    is_fallback=False
+                )
+            except Exception as e:
+                logger.error(f"Error parsing LLM prioritize: {e}")
+
+        # Fallback
+        res = _heuristic_prioritize(title, description)
+        return AIPrioritizeResponse(
+            suggested_priority=res["suggested_priority"],
             reasoning=res["reasoning"],
             is_fallback=True
         )

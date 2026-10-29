@@ -53,10 +53,14 @@ def create_task(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
+    clean_title = task_in.title.strip()
+    if not clean_title:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Название задачи не может быть пустым")
+
     task = Task(
         user_id=current_user.id,
-        title=task_in.title.strip(),
-        description=task_in.description.strip() if task_in.description else None,
+        title=clean_title,
+        description=task_in.description.strip() if (task_in.description and task_in.description.strip()) else None,
         priority=task_in.priority,
         status="todo",
         deadline=task_in.deadline,
@@ -99,10 +103,24 @@ def update_task(
 
     update_data = task_in.model_dump(exclude_unset=True)
     for field, value in update_data.items():
-        if field == "title" and value is not None:
-            setattr(task, field, value.strip())
-        elif field == "description" and value is not None:
-            setattr(task, field, value.strip() if value else None)
+        if field == "title":
+            if value is not None:
+                clean = value.strip()
+                if not clean:
+                    raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Название задачи не может быть пустым")
+                setattr(task, field, clean)
+        elif field == "description":
+            setattr(task, field, value.strip() if (value and isinstance(value, str) and value.strip()) else None)
+        elif field == "deadline":
+            setattr(task, field, value)
+        elif field == "subtasks":
+            if value is not None:
+                existing_titles = {s.title.lower().strip() for s in task.subtasks}
+                for st_title in value:
+                    clean_st = st_title.strip()
+                    if clean_st and clean_st.lower() not in existing_titles:
+                        db.add(Subtask(task_id=task.id, title=clean_st, is_completed=False))
+                        existing_titles.add(clean_st.lower())
         else:
             setattr(task, field, value)
 

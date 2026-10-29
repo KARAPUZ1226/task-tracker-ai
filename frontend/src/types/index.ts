@@ -44,10 +44,11 @@ export interface TaskCreatePayload {
 
 export interface TaskUpdatePayload {
   title?: string;
-  description?: string;
+  description?: string | null;
   priority?: Priority;
   status?: Status;
-  deadline?: string;
+  deadline?: string | null;
+  subtasks?: string[];
 }
 
 export interface AIDecomposeResponse {
@@ -65,6 +66,12 @@ export interface AIDescriptionResponse {
 export interface AIDeadlineResponse {
   suggested_deadline: string;
   estimated_days: number;
+  reasoning: string;
+  is_fallback: boolean;
+}
+
+export interface AIPrioritizeResponse {
+  suggested_priority: Priority;
   reasoning: string;
   is_fallback: boolean;
 }

@@ -84,10 +84,10 @@ export const App: React.FC = () => {
   // Handlers
   const handleSaveTask = async (data: {
     title: string;
-    description?: string;
+    description?: string | null;
     priority: Priority;
     status?: Status;
-    deadline?: string;
+    deadline?: string | null;
     subtasks?: string[];
   }) => {
     if (taskToEdit) {
@@ -97,6 +97,7 @@ export const App: React.FC = () => {
         priority: data.priority,
         status: data.status,
         deadline: data.deadline,
+        subtasks: data.subtasks,
       });
       setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
       toast.success('Задача обновлена');
@@ -106,9 +107,9 @@ export const App: React.FC = () => {
     } else {
       const created = await api.createTask({
         title: data.title,
-        description: data.description,
+        description: data.description || undefined,
         priority: data.priority,
-        deadline: data.deadline,
+        deadline: data.deadline || undefined,
         subtasks: data.subtasks,
       });
       setTasks((prev) => [created, ...prev]);
