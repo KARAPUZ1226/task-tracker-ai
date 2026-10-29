@@ -209,7 +209,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
       {/* Subtasks Accordion (if any) */}
       {totalSubtasks > 0 && (
-        <div className="border-t border-zinc-100 dark:border-white/[0.06] pt-2">
+        <div className="border-t border-zinc-100 dark:border-white/[0.06] pt-2 min-w-0 w-full">
           <div className="flex items-center justify-between">
             <button
               type="button"
@@ -228,24 +228,25 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               onToggle={onToggleSubtask}
               onAdd={onAddSubtask}
               onDelete={onDeleteSubtask}
+              truncateText={true}
             />
           )}
         </div>
       )}
 
       {/* Bottom Row: Details link on left, Prominent Status Transition Button on RIGHT */}
-      <div className="flex items-center justify-between pt-2 border-t border-zinc-100 dark:border-white/[0.06]">
+      <div className="flex items-center justify-between gap-1.5 flex-wrap pt-2 border-t border-zinc-100 dark:border-white/[0.06]">
         <button
           type="button"
           onClick={() => onView(task)}
-          className="text-[11px] font-medium text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors flex items-center gap-1"
+          className="text-[11px] font-medium text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors flex items-center gap-1 shrink-0"
         >
           <Eye className="w-3 h-3" />
           <span>Подробнее</span>
         </button>
 
         {/* Заметные кнопки переноса статуса в правом нижнем углу карточки */}
-        <div className="flex items-center gap-1.5 shrink-0">
+        <div className="flex items-center gap-1.5 flex-wrap justify-end shrink-0">
           {task.status === 'todo' && (
             allSubtasksDone ? (
               <button
@@ -277,7 +278,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
           )}
 
           {task.status === 'in_progress' && (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap justify-end">
               <button
                 type="button"
                 onClick={(e) => {

@@ -116,7 +116,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
               </div>
 
               {/* Task list in column */}
-              <div className="space-y-3 flex-1">
+              <div className="space-y-3 flex-1 min-w-0 w-full">
                 {colTasks.length > 0 ? (
                   colTasks.map((task) => (
                     <TaskCard

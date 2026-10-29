@@ -8,6 +8,7 @@ interface SubtaskChecklistProps {
   onToggle: (taskId: number, subtaskId: number, currentStatus: boolean) => void;
   onAdd: (taskId: number, title: string) => void;
   onDelete: (taskId: number, subtaskId: number) => void;
+  truncateText?: boolean;
 }
 
 export const SubtaskChecklist: React.FC<SubtaskChecklistProps> = ({
@@ -16,6 +17,7 @@ export const SubtaskChecklist: React.FC<SubtaskChecklistProps> = ({
   onToggle,
   onAdd,
   onDelete,
+  truncateText = true,
 }) => {
   const [newTitle, setNewTitle] = useState('');
   const [isAdding, setIsAdding] = useState(false);
@@ -34,10 +36,10 @@ export const SubtaskChecklist: React.FC<SubtaskChecklistProps> = ({
   };
 
   return (
-    <div className="space-y-2.5 pt-1">
+    <div className="space-y-2.5 pt-1 min-w-0 w-full">
       {/* Progress Bar Header */}
       {totalCount > 0 && (
-        <div className="space-y-1">
+        <div className="space-y-1 min-w-0 w-full">
           <div className="flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400">
             <span className="flex items-center gap-1 font-medium">
               <CheckCircle2 className="w-3 h-3 text-emerald-500" />
@@ -56,17 +58,26 @@ export const SubtaskChecklist: React.FC<SubtaskChecklistProps> = ({
         </div>
       )}
 
-      {/* Checklist items */}
-      <div className="space-y-1">
+      {/* Checklist items with accessible row and robust truncation */}
+      <div className="space-y-1 min-w-0 w-full">
         {subtasks.map((st) => (
           <div
             key={st.id}
-            className="group flex items-center justify-between gap-2 p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition-colors min-w-0"
+            className="group flex items-center justify-between gap-2 p-1.5 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/[0.04] transition-colors min-w-0 w-full"
           >
-            <label className="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer select-none overflow-hidden">
-              <button
-                type="button"
-                onClick={() => onToggle(taskId, st.id, st.is_completed)}
+            <div
+              onClick={() => onToggle(taskId, st.id, st.is_completed)}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  onToggle(taskId, st.id, st.is_completed);
+                }
+              }}
+              className="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer select-none overflow-hidden"
+            >
+              <div
                 className={`w-4 h-4 rounded shrink-0 flex items-center justify-center transition-all ${
                   st.is_completed
                     ? 'bg-emerald-600 text-white border border-emerald-500'
@@ -74,10 +85,12 @@ export const SubtaskChecklist: React.FC<SubtaskChecklistProps> = ({
                 }`}
               >
                 {st.is_completed && <Check className="w-3 h-3 stroke-[3]" />}
-              </button>
+              </div>
               <span
                 title={st.title}
-                className={`text-xs leading-snug transition-all truncate min-w-0 flex-1 block ${
+                className={`text-xs leading-snug transition-all min-w-0 flex-1 block ${
+                  truncateText ? 'truncate' : 'break-words'
+                } ${
                   st.is_completed
                     ? 'line-through text-zinc-400 dark:text-zinc-500'
                     : 'text-zinc-800 dark:text-zinc-200 group-hover:text-zinc-950 dark:group-hover:text-white'
@@ -85,14 +98,18 @@ export const SubtaskChecklist: React.FC<SubtaskChecklistProps> = ({
               >
                 {st.title}
               </span>
-            </label>
+            </div>
             <button
               type="button"
-              onClick={() => onDelete(taskId, st.id)}
-              className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-rose-500 p-1 rounded transition-all shrink-0"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(taskId, st.id);
+              }}
+              className="opacity-70 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 text-zinc-400 hover:text-rose-500 p-1 rounded transition-all shrink-0"
               title="Удалить подзадачу"
+              aria-label="Удалить подзадачу"
             >
-              <Trash2 className="w-3 h-3" />
+              <Trash2 className="w-3.5 h-3.5" />
             </button>
           </div>
         ))}

@@ -188,6 +188,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
               onToggle={onToggleSubtask}
               onAdd={onAddSubtask}
               onDelete={onDeleteSubtask}
+              truncateText={false}
             />
           </div>
         </div>
