@@ -206,7 +206,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
   };
 
   // Formatting helper for description
-  const applyFormat = (type: 'bold' | 'italic' | 'underline') => {
+  const applyFormat = (type: 'bold' | 'italic' | 'underline' | 'code') => {
     if (!textareaRef.current) return;
     const start = textareaRef.current.selectionStart;
     const end = textareaRef.current.selectionEnd;
@@ -224,9 +224,19 @@ export const TaskModal: React.FC<TaskModalProps> = ({
     } else if (type === 'underline') {
       prefix = '<u>';
       suffix = '</u>';
+    } else if (type === 'code') {
+      prefix = '`';
+      suffix = '`';
     }
 
-    const defaultPlaceholder = type === 'bold' ? 'жирный текст' : type === 'italic' ? 'курсив' : 'подчеркнутый текст';
+    const defaultPlaceholder =
+      type === 'bold'
+        ? 'жирный текст'
+        : type === 'italic'
+        ? 'курсив'
+        : type === 'underline'
+        ? 'подчеркнутый текст'
+        : 'код';
     const textToInsert = selected || defaultPlaceholder;
     const newVal = currentVal.slice(0, start) + prefix + textToInsert + suffix + currentVal.slice(end);
     setDescription(newVal);
@@ -237,6 +247,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
         const newStart = start + prefix.length;
         const newEnd = newStart + textToInsert.length;
         textareaRef.current.setSelectionRange(newStart, newEnd);
+        checkSelection();
       }
     }, 0);
   };
@@ -508,66 +519,74 @@ export const TaskModal: React.FC<TaskModalProps> = ({
               </div>
             </div>
 
-            {/* Quick formatting bar (Жирный, Курсив, Подчеркнуть) */}
-            {descTab === 'edit' && (
-              <div className="flex items-center justify-between gap-1 mb-1.5 p-1 rounded-xl bg-zinc-100 dark:bg-[#161922] border border-zinc-200 dark:border-white/[0.06]">
-                <div className="flex items-center gap-1">
-                  <span className="text-[10px] uppercase font-bold text-zinc-400 px-1.5">Стиль:</span>
-                  <button
-                    type="button"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      applyFormat('bold');
-                    }}
-                    className="px-2.5 py-0.5 rounded-lg text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:bg-white dark:hover:bg-zinc-800 shadow-xs transition-all active:scale-95"
-                    title="Сделать жирным (**текст**)"
-                  >
-                    Ж
-                  </button>
-                  <button
-                    type="button"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      applyFormat('italic');
-                    }}
-                    className="px-2.5 py-0.5 rounded-lg text-xs italic font-serif text-zinc-700 dark:text-zinc-200 hover:bg-white dark:hover:bg-zinc-800 shadow-xs transition-all active:scale-95"
-                    title="Сделать курсивом (*текст*)"
-                  >
-                    К
-                  </button>
-                  <button
-                    type="button"
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      applyFormat('underline');
-                    }}
-                    className="px-2.5 py-0.5 rounded-lg text-xs underline font-sans text-zinc-700 dark:text-zinc-200 hover:bg-white dark:hover:bg-zinc-800 shadow-xs transition-all active:scale-95"
-                    title="Подчеркнуть (<u>текст</u>)"
-                  >
-                    Ч
-                  </button>
-                </div>
-
-                {hasSelection && (
-                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium px-2 animate-in fade-in">
-                    Текст выделен — нажмите кнопку стиля
-                  </span>
-                )}
-              </div>
-            )}
-
             {descTab === 'edit' ? (
-              <textarea
-                ref={textareaRef}
-                rows={5}
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                onSelect={checkSelection}
-                onKeyUp={checkSelection}
-                onMouseUp={checkSelection}
-                placeholder="Контекст, детали или критерии выполнения (поддерживает ### заголовки, списки, выделение текста)..."
-                className="w-full bg-zinc-100 dark:bg-[#18181c] border border-zinc-300 dark:border-white/[0.08] focus:border-emerald-500 rounded-xl p-3 text-xs text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 outline-none leading-relaxed transition-all resize-none min-h-[110px]"
-              />
+              <div className="relative">
+                {/* Floating Formatting Toolbar: pops up STRICTLY on text selection! */}
+                {hasSelection && (
+                  <div className="absolute -top-10 right-1 sm:right-2 z-20 flex items-center gap-0.5 sm:gap-1 p-1 rounded-xl bg-zinc-900/95 dark:bg-[#1e2029] text-white shadow-2xl border border-white/20 backdrop-blur-md animate-in fade-in zoom-in-95 duration-150">
+                    <span className="text-[10px] font-bold text-emerald-400 px-1 sm:px-1.5 uppercase tracking-wider hidden sm:inline">
+                      Формат:
+                    </span>
+                    <button
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        applyFormat('bold');
+                      }}
+                      className="px-2 py-0.5 rounded-lg text-xs font-bold hover:bg-white/20 active:scale-95 transition-all text-white"
+                      title="Сделать жирным (**текст**)"
+                    >
+                      Ж
+                    </button>
+                    <button
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        applyFormat('italic');
+                      }}
+                      className="px-2 py-0.5 rounded-lg text-xs italic font-serif hover:bg-white/20 active:scale-95 transition-all text-white"
+                      title="Сделать курсивом (*текст*)"
+                    >
+                      К
+                    </button>
+                    <button
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        applyFormat('underline');
+                      }}
+                      className="px-2 py-0.5 rounded-lg text-xs underline font-sans hover:bg-white/20 active:scale-95 transition-all text-white"
+                      title="Подчеркнуть (<u>текст</u>)"
+                    >
+                      Ч
+                    </button>
+                    <button
+                      type="button"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        applyFormat('code');
+                      }}
+                      className="px-2 py-0.5 rounded-lg text-[11px] font-mono hover:bg-white/20 active:scale-95 transition-all text-emerald-300"
+                      title="Моноширинный код (`текст`)"
+                    >
+                      &lt;/&gt;
+                    </button>
+                  </div>
+                )}
+
+                <textarea
+                  ref={textareaRef}
+                  rows={5}
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  onSelect={checkSelection}
+                  onKeyUp={checkSelection}
+                  onMouseUp={checkSelection}
+                  onTouchEnd={checkSelection}
+                  placeholder="Контекст, детали или критерии выполнения (выделите любой фрагмент текста, чтобы сделать его жирным, курсивом или подчеркнутым)..."
+                  className="w-full bg-zinc-100 dark:bg-[#18181c] border border-zinc-300 dark:border-white/[0.08] focus:border-emerald-500 rounded-xl p-3 text-xs text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 outline-none leading-relaxed transition-all resize-none min-h-[110px]"
+                />
+              </div>
             ) : (
               <div className="w-full bg-zinc-50 dark:bg-[#161922] border border-zinc-200 dark:border-white/[0.08] rounded-xl p-3.5 min-h-[110px] overflow-y-auto">
                 {description.trim() ? (

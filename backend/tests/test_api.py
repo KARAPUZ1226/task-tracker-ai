@@ -354,4 +354,41 @@ def test_ai_semantic_priorities_and_dynamic_steps(client):
     # Ensure desc2 does not duplicate or concatenate the entire previous description
     assert desc2.count("### Цель задачи") <= 1
     assert desc2.count("### Описание задачи") <= 1
+    # Criteria of readiness must NOT have - [x]
+    assert "- [x]" not in desc2
+    assert "- [ ]" in desc2
+
+def test_subtask_reorder_and_rename_sync(client):
+    reg = client.post("/api/auth/register", json={
+        "email": "user_sync@example.com",
+        "password": "password_sync"
+    })
+    token = reg.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # 1. Create task with 3 subtasks
+    create_res = client.post("/api/tasks", headers=headers, json={
+        "title": "Тестирование синхронизации подзадач",
+        "priority": "medium",
+        "subtasks": ["Шаг 1", "Шаг 2", "Шаг 3"]
+    })
+    assert create_res.status_code == 201
+    task_id = create_res.json()["id"]
+    sub_1_id = create_res.json()["subtasks"][0]["id"]
+
+    # Mark Step 1 completed
+    client.patch(f"/api/tasks/{task_id}/subtasks/{sub_1_id}", headers=headers, json={"is_completed": True})
+
+    # 2. Reorder, rename Step 2, and delete Step 3 via task update
+    update_res = client.patch(f"/api/tasks/{task_id}", headers=headers, json={
+        "subtasks": ["Шаг 2 изменен", "Шаг 1"]
+    })
+    assert update_res.status_code == 200
+    updated_subs = update_res.json()["subtasks"]
+    assert len(updated_subs) == 2
+    assert updated_subs[0]["title"] == "Шаг 2 изменен"
+    assert updated_subs[1]["title"] == "Шаг 1"
+    # Preserved completion for Шаг 1
+    assert updated_subs[1]["is_completed"] is True
+
 

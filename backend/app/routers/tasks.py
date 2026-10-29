@@ -115,12 +115,13 @@ def update_task(
             setattr(task, field, value)
         elif field == "subtasks":
             if value is not None:
-                existing_titles = {s.title.lower().strip() for s in task.subtasks}
-                for st_title in value:
-                    clean_st = st_title.strip()
-                    if clean_st and clean_st.lower() not in existing_titles:
-                        db.add(Subtask(task_id=task.id, title=clean_st, is_completed=False))
-                        existing_titles.add(clean_st.lower())
+                clean_titles = [st.strip() for st in value if st and st.strip()]
+                completion_map = {s.title.strip().lower(): s.is_completed for s in task.subtasks}
+                task.subtasks.clear()
+                db.flush()
+                for st_title in clean_titles:
+                    was_done = completion_map.get(st_title.lower(), False)
+                    task.subtasks.append(Subtask(task_id=task.id, title=st_title, is_completed=was_done))
         else:
             setattr(task, field, value)
 
