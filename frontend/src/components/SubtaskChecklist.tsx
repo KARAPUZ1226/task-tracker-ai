@@ -1,0 +1,141 @@
+import React, { useState } from 'react';
+import { Subtask } from '../types';
+import { Check, Plus, Trash2, CheckCircle2 } from 'lucide-react';
+
+interface SubtaskChecklistProps {
+  taskId: number;
+  subtasks: Subtask[];
+  onToggle: (taskId: number, subtaskId: number, currentStatus: boolean) => void;
+  onAdd: (taskId: number, title: string) => void;
+  onDelete: (taskId: number, subtaskId: number) => void;
+}
+
+export const SubtaskChecklist: React.FC<SubtaskChecklistProps> = ({
+  taskId,
+  subtasks,
+  onToggle,
+  onAdd,
+  onDelete,
+}) => {
+  const [newTitle, setNewTitle] = useState('');
+  const [isAdding, setIsAdding] = useState(false);
+
+  const completedCount = subtasks.filter((s) => s.is_completed).length;
+  const totalCount = subtasks.length;
+  const progressPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newTitle.trim()) {
+      onAdd(taskId, newTitle.trim());
+      setNewTitle('');
+      setIsAdding(false);
+    }
+  };
+
+  return (
+    <div className="space-y-2.5 pt-2">
+      {/* Progress Bar Header */}
+      {totalCount > 0 && (
+        <div className="space-y-1">
+          <div className="flex items-center justify-between text-[11px] text-zinc-400">
+            <span className="flex items-center gap-1 font-medium">
+              <CheckCircle2 className="w-3 h-3 text-brand-400" />
+              Подзадачи ({completedCount}/{totalCount})
+            </span>
+            <span className="font-semibold text-zinc-300">{progressPercent}%</span>
+          </div>
+          <div className="w-full h-1.5 bg-white/[0.06] rounded-full overflow-hidden">
+            <div
+              className={`h-full transition-all duration-300 rounded-full ${
+                progressPercent === 100
+                  ? 'bg-emerald-500'
+                  : 'bg-gradient-to-r from-brand-500 to-indigo-400'
+              }`}
+              style={{ width: `${progressPercent}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Checklist items */}
+      <div className="space-y-1">
+        {subtasks.map((st) => (
+          <div
+            key={st.id}
+            className="group flex items-center justify-between gap-2 p-1.5 rounded-lg hover:bg-white/[0.04] transition-colors"
+          >
+            <label className="flex items-center gap-2.5 flex-1 cursor-pointer select-none">
+              <button
+                type="button"
+                onClick={() => onToggle(taskId, st.id, st.is_completed)}
+                className={`w-4 h-4 rounded flex items-center justify-center transition-all ${
+                  st.is_completed
+                    ? 'bg-emerald-500 text-black border border-emerald-400'
+                    : 'border border-zinc-600 hover:border-zinc-400 bg-transparent'
+                }`}
+              >
+                {st.is_completed && <Check className="w-3 h-3 stroke-[3]" />}
+              </button>
+              <span
+                className={`text-xs leading-snug transition-all ${
+                  st.is_completed
+                    ? 'line-through text-zinc-500'
+                    : 'text-zinc-300 group-hover:text-white'
+                }`}
+              >
+                {st.title}
+              </span>
+            </label>
+            <button
+              onClick={() => onDelete(taskId, st.id)}
+              className="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-red-400 p-1 transition-all"
+              title="Удалить подзадачу"
+            >
+              <Trash2 className="w-3 h-3" />
+            </button>
+          </div>
+        ))}
+      </div>
+
+      {/* Add new subtask */}
+      {isAdding ? (
+        <form onSubmit={handleSubmit} className="flex items-center gap-2 pt-1">
+          <input
+            type="text"
+            value={newTitle}
+            onChange={(e) => setNewTitle(e.target.value)}
+            placeholder="Название шага..."
+            autoFocus
+            className="flex-1 bg-[#09090b] border border-white/[0.1] rounded-lg px-2.5 py-1 text-xs text-white placeholder-zinc-500 outline-none focus:border-brand-500"
+          />
+          <button
+            type="submit"
+            className="px-2.5 py-1 text-xs bg-brand-600 hover:bg-brand-500 text-white rounded-lg font-medium"
+          >
+            Добавить
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setIsAdding(false);
+              setNewTitle('');
+            }}
+            className="px-2 py-1 text-xs text-zinc-400 hover:text-white"
+          >
+            Отмена
+          </button>
+        </form>
+      ) : (
+        <button
+          type="button"
+          onClick={() => setIsAdding(true)}
+          className="flex items-center gap-1.5 text-[11px] text-zinc-500 hover:text-brand-400 font-medium py-1 transition-colors"
+        >
+          <Plus className="w-3.5 h-3.5" />
+          <span>Добавить пункт</span>
+        </button>
+      )}
+    </div>
+  );
+};
