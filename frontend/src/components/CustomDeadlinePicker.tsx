@@ -196,59 +196,19 @@ export const CustomDeadlinePicker: React.FC<CustomDeadlinePickerProps> = ({ valu
           )}
         </div>
 
-        <button
-          type="button"
-          onClick={() => setIsOpen(!isOpen)}
-          className="px-3 py-2 rounded-xl bg-zinc-200 dark:bg-white/[0.06] hover:bg-zinc-300 dark:hover:bg-white/[0.1] text-xs font-medium text-zinc-700 dark:text-zinc-300 transition-colors"
-        >
-          Календарь
-        </button>
-      </div>
-
-      {/* Quick presets pills */}
-      <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-        <button
-          type="button"
-          onClick={() => applyPreset('today')}
-          className="px-2.5 py-1 rounded-lg text-[11px] bg-zinc-100 dark:bg-white/[0.04] hover:bg-zinc-200 dark:hover:bg-white/[0.08] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 border border-zinc-200 dark:border-white/[0.06] transition-all"
-        >
-          Сегодня 18:00
-        </button>
-        <button
-          type="button"
-          onClick={() => applyPreset('tomorrow')}
-          className="px-2.5 py-1 rounded-lg text-[11px] bg-zinc-100 dark:bg-white/[0.04] hover:bg-zinc-200 dark:hover:bg-white/[0.08] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 border border-zinc-200 dark:border-white/[0.06] transition-all"
-        >
-          Завтра 12:00
-        </button>
-        <button
-          type="button"
-          onClick={() => applyPreset('3days')}
-          className="px-2.5 py-1 rounded-lg text-[11px] bg-zinc-100 dark:bg-white/[0.04] hover:bg-zinc-200 dark:hover:bg-white/[0.08] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 border border-zinc-200 dark:border-white/[0.06] transition-all"
-        >
-          Через 3 дня
-        </button>
-        <button
-          type="button"
-          onClick={() => applyPreset('week')}
-          className="px-2.5 py-1 rounded-lg text-[11px] bg-zinc-100 dark:bg-white/[0.04] hover:bg-zinc-200 dark:hover:bg-white/[0.08] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 border border-zinc-200 dark:border-white/[0.06] transition-all"
-        >
-          Через неделю
-        </button>
-        {value && (
+        <div className="relative">
           <button
             type="button"
-            onClick={() => applyPreset('clear')}
-            className="px-2 py-1 rounded-lg text-[11px] text-rose-500 hover:bg-rose-500/10 transition-colors ml-auto"
+            onClick={() => setIsOpen(!isOpen)}
+            className="px-3.5 py-2 rounded-xl bg-zinc-200 dark:bg-white/[0.06] hover:bg-zinc-300 dark:hover:bg-white/[0.1] text-xs font-semibold text-zinc-700 dark:text-zinc-200 transition-colors flex items-center gap-1.5"
           >
-            Сбросить
+            <Calendar className="w-3.5 h-3.5" />
+            <span>Календарь</span>
           </button>
-        )}
-      </div>
 
-      {/* Popover Calendar Modal/Window */}
-      {isOpen && (
-        <div className="absolute left-0 top-full mt-2 z-50 w-72 rounded-2xl bg-white dark:bg-[#18181c] border border-zinc-200 dark:border-white/[0.12] shadow-2xl p-4 space-y-3 animate-fade-in">
+          {/* Popover Calendar Modal/Window positioned strictly under Calendar button */}
+          {isOpen && (
+            <div className="absolute right-0 top-full mt-2 z-50 w-72 sm:w-80 rounded-2xl bg-white dark:bg-[#18181c] border border-zinc-200 dark:border-white/[0.12] shadow-2xl p-4 space-y-3 animate-fade-in">
           {/* Header with Month / Year & Nav */}
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
@@ -422,6 +382,49 @@ export const CustomDeadlinePicker: React.FC<CustomDeadlinePickerProps> = ({ valu
           </div>
         </div>
       )}
+        </div>
+      </div>
+
+      {/* Quick presets pills */}
+      <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+        <button
+          type="button"
+          onClick={() => applyPreset('today')}
+          className="px-2.5 py-1 rounded-lg text-[11px] bg-zinc-100 dark:bg-white/[0.04] hover:bg-zinc-200 dark:hover:bg-white/[0.08] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 border border-zinc-200 dark:border-white/[0.06] transition-all"
+        >
+          Сегодня 18:00
+        </button>
+        <button
+          type="button"
+          onClick={() => applyPreset('tomorrow')}
+          className="px-2.5 py-1 rounded-lg text-[11px] bg-zinc-100 dark:bg-white/[0.04] hover:bg-zinc-200 dark:hover:bg-white/[0.08] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 border border-zinc-200 dark:border-white/[0.06] transition-all"
+        >
+          Завтра 12:00
+        </button>
+        <button
+          type="button"
+          onClick={() => applyPreset('3days')}
+          className="px-2.5 py-1 rounded-lg text-[11px] bg-zinc-100 dark:bg-white/[0.04] hover:bg-zinc-200 dark:hover:bg-white/[0.08] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 border border-zinc-200 dark:border-white/[0.06] transition-all"
+        >
+          Через 3 дня
+        </button>
+        <button
+          type="button"
+          onClick={() => applyPreset('week')}
+          className="px-2.5 py-1 rounded-lg text-[11px] bg-zinc-100 dark:bg-white/[0.04] hover:bg-zinc-200 dark:hover:bg-white/[0.08] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 border border-zinc-200 dark:border-white/[0.06] transition-all"
+        >
+          Через неделю
+        </button>
+        {value && (
+          <button
+            type="button"
+            onClick={() => applyPreset('clear')}
+            className="px-2 py-1 rounded-lg text-[11px] text-rose-500 hover:bg-rose-500/10 transition-colors ml-auto"
+          >
+            Сбросить
+          </button>
+        )}
+      </div>
     </div>
   );
 };

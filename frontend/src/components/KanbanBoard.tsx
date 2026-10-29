@@ -13,12 +13,12 @@ interface KanbanBoardProps {
   onAddSubtask: (taskId: number, title: string) => void;
   onDeleteSubtask: (taskId: number, subtaskId: number) => void;
   onOpenCreateWithStatus: (status: Status) => void;
-  statusFilter?: Status | 'all';
+  activeColumn?: Status;
 }
 
 export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   tasks,
-  statusFilter = 'all',
+  activeColumn = 'todo',
   onViewTask,
   onEditTask,
   onDeleteTask,
@@ -28,14 +28,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   onDeleteSubtask,
   onOpenCreateWithStatus,
 }) => {
-  const [activeMobileColumn, setActiveMobileColumn] = useState<Status>('todo');
   const [dragOverColumn, setDragOverColumn] = useState<Status | null>(null);
-
-  React.useEffect(() => {
-    if (statusFilter && statusFilter !== 'all') {
-      setActiveMobileColumn(statusFilter);
-    }
-  }, [statusFilter]);
 
   const columns: { id: Status; title: string; icon: React.ReactNode; color: string; badge: string }[] = [
     {
@@ -65,33 +58,11 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
 
   return (
     <div className="space-y-4">
-      {/* Mobile Column Tabs */}
-      <div className="flex md:hidden bg-zinc-100 dark:bg-[#12141a] p-1 rounded-xl border border-zinc-200 dark:border-white/[0.08]">
-        {columns.map((col) => {
-          const count = getTasksForColumn(col.id).length;
-          const isActive = activeMobileColumn === col.id;
-          return (
-            <button
-              key={col.id}
-              onClick={() => setActiveMobileColumn(col.id)}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${
-                isActive
-                  ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm'
-                  : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
-              }`}
-            >
-              <span>{col.title}</span>
-              <span className="px-1.5 py-0.2 bg-zinc-200 dark:bg-black/30 rounded-full text-[10px]">{count}</span>
-            </button>
-          );
-        })}
-      </div>
-
       {/* Grid columns */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start pb-24">
         {columns.map((col) => {
           const colTasks = getTasksForColumn(col.id);
-          const isHiddenOnMobile = activeMobileColumn !== col.id;
+          const isHiddenOnMobile = activeColumn !== col.id;
           const isDropActive = dragOverColumn === col.id;
 
           return (

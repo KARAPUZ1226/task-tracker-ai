@@ -303,3 +303,55 @@ def test_ai_context_aware_generation(client):
     # Check that steps are about cleaning, not code
     assert any("чист" in s.lower() or "инвентар" in s.lower() or "посуд" in s.lower() or "пространств" in s.lower() for s in steps)
 
+def test_ai_semantic_priorities_and_dynamic_steps(client):
+    reg = client.post("/api/auth/register", json={
+        "email": "user7@example.com",
+        "password": "password7"
+    })
+    token = reg.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # 1. Taxes / Fines -> Urgent priority without "срочно" trigger
+    prio_tax = client.post("/api/ai/prioritize", headers=headers, json={
+        "title": "Оплатить налог на имущество и штраф ГИБДД"
+    })
+    assert prio_tax.status_code == 200
+    assert prio_tax.json()["suggested_priority"] == "urgent"
+
+    # 2. Reading a book / hobby -> Low priority
+    prio_book = client.post("/api/ai/prioritize", headers=headers, json={
+        "title": "Прочитать 3 главы книги перед сном"
+    })
+    assert prio_book.status_code == 200
+    assert prio_book.json()["suggested_priority"] == "low"
+
+    # 3. Simple chore -> 2 or 3 steps (NOT 5!)
+    dec_simple = client.post("/api/ai/decompose", headers=headers, json={
+        "title": "Полить цветы"
+    })
+    assert dec_simple.status_code == 200
+    subtasks_simple = dec_simple.json()["subtasks"]
+    assert 2 <= len(subtasks_simple) <= 3
+
+    # 4. Complex IT task -> 4 to 6 steps
+    dec_complex = client.post("/api/ai/decompose", headers=headers, json={
+        "title": "Разработать модуль авторизации JWT и миграции базы данных"
+    })
+    assert dec_complex.status_code == 200
+    subtasks_complex = dec_complex.json()["subtasks"]
+    assert len(subtasks_complex) >= 4
+
+    # 5. Repeated description generation does not append old accumulated context
+    res_desc1 = client.post("/api/ai/generate-description", headers=headers, json={
+        "title": "Сделать уборку в гостиной"
+    })
+    desc1 = res_desc1.json()["description"]
+    res_desc2 = client.post("/api/ai/generate-description", headers=headers, json={
+        "title": "Сделать уборку в гостиной",
+        "context": desc1
+    })
+    desc2 = res_desc2.json()["description"]
+    # Ensure desc2 does not duplicate or concatenate the entire previous description
+    assert desc2.count("### Цель задачи") <= 1
+    assert desc2.count("### Описание задачи") <= 1
+

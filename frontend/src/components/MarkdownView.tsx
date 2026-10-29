@@ -11,13 +11,26 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({ content, className =
 
   const lines = content.split('\n');
 
-  // Helper to parse inline formatting like **bold** and `code`
+  // Helper to parse inline formatting like **bold**, *italic*, <u>underline</u> and `code`
   const renderInline = (text: string) => {
-    // Split by **bold** and `code`
-    const parts = text.split(/(\*\*.*?\*\*|`.*?`)/g);
+    const parts = text.split(/(\*\*.*?\*\*|<u>.*?<\/u>|__.*?__|`.*?`|\*.*?\*|_.*?_)/g);
     return parts.map((part, idx) => {
       if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
         return <strong key={idx} className="font-semibold text-zinc-900 dark:text-zinc-100">{part.slice(2, -2)}</strong>;
+      }
+      if (part.startsWith('<u>') && part.endsWith('</u>') && part.length >= 7) {
+        return (
+          <span key={idx} className="underline decoration-emerald-500/70 underline-offset-2">
+            {part.slice(3, -4)}
+          </span>
+        );
+      }
+      if (part.startsWith('__') && part.endsWith('__') && part.length >= 4) {
+        return (
+          <span key={idx} className="underline decoration-emerald-500/70 underline-offset-2">
+            {part.slice(2, -2)}
+          </span>
+        );
       }
       if (part.startsWith('`') && part.endsWith('`') && part.length >= 2) {
         return (
@@ -25,6 +38,12 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({ content, className =
             {part.slice(1, -1)}
           </code>
         );
+      }
+      if (
+        ((part.startsWith('*') && part.endsWith('*')) || (part.startsWith('_') && part.endsWith('_'))) &&
+        part.length >= 2
+      ) {
+        return <em key={idx} className="italic text-zinc-800 dark:text-zinc-200">{part.slice(1, -1)}</em>;
       }
       return part;
     });
@@ -62,12 +81,12 @@ export const MarkdownView: React.FC<MarkdownViewProps> = ({ content, className =
           );
         }
 
-        // Checklist items
+        // Checklist items: clean readable presentation without line-through!
         if (line.startsWith('- [x] ') || line.startsWith('* [x] ')) {
           return (
-            <div key={index} className="flex items-start gap-2 pl-1 py-0.5 text-zinc-500 dark:text-zinc-400">
-              <CheckSquare className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 mt-0.5 shrink-0" />
-              <span className="line-through">{renderInline(line.slice(6))}</span>
+            <div key={index} className="flex items-start gap-2 pl-1 py-0.5 text-zinc-800 dark:text-zinc-200">
+              <CheckSquare className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" />
+              <span>{renderInline(line.slice(6))}</span>
             </div>
           );
         }

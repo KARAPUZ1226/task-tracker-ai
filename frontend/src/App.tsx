@@ -5,7 +5,6 @@ import { api } from './services/api';
 import { Task, Status, Priority } from './types';
 import { Navbar } from './components/Navbar';
 import { KanbanBoard } from './components/KanbanBoard';
-import { ListView } from './components/ListView';
 import { TaskModal } from './components/TaskModal';
 import { TaskDetailModal } from './components/TaskDetailModal';
 import { SettingsModal } from './components/SettingsModal';
@@ -14,7 +13,7 @@ import { BottomToolbar } from './components/BottomToolbar';
 import { FloatingAddButton } from './components/FloatingAddButton';
 import { Toaster, toast } from 'sonner';
 import confetti from 'canvas-confetti';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Search, X } from 'lucide-react';
 
 export const App: React.FC = () => {
   const { user, isLoading: authLoading } = useAuth();
@@ -25,9 +24,8 @@ export const App: React.FC = () => {
 
   // Filters state
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<Status | 'all'>('all');
+  const [activeColumn, setActiveColumn] = useState<Status>('todo');
   const [priorityFilter, setPriorityFilter] = useState<Priority | 'all'>('all');
-  const [viewMode, setViewMode] = useState<'kanban' | 'list'>('kanban');
 
   // Modal states
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
@@ -55,7 +53,6 @@ export const App: React.FC = () => {
     try {
       const data = await api.getTasks({
         search: search || undefined,
-        status: statusFilter === 'all' ? undefined : statusFilter,
         priority: priorityFilter === 'all' ? undefined : priorityFilter,
       });
       setTasks(data);
@@ -64,7 +61,7 @@ export const App: React.FC = () => {
     } finally {
       setLoadingTasks(false);
     }
-  }, [user, search, statusFilter, priorityFilter]);
+  }, [user, search, priorityFilter]);
 
   useEffect(() => {
     loadTasks();
@@ -269,15 +266,39 @@ export const App: React.FC = () => {
       <Navbar onOpenSettings={() => setIsSettingsOpen(true)} />
 
       {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 relative">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 relative">
+        {/* Плавающий аккуратный островок поиска вверху экрана (под шапкой по центру) */}
+        <div className="flex justify-center mb-6">
+          <div className="relative flex items-center bg-white/80 dark:bg-[#12141a]/80 backdrop-blur-xl border border-zinc-200/80 dark:border-white/[0.1] rounded-2xl shadow-lg shadow-zinc-900/5 px-4 py-2 w-full max-w-md focus-within:ring-2 focus-within:ring-emerald-500/40 focus-within:border-emerald-500 transition-all duration-200">
+            <Search className="w-4 h-4 text-zinc-400 dark:text-zinc-500 mr-2.5 shrink-0" />
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Поиск задач..."
+              className="w-full bg-transparent text-xs sm:text-sm text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 outline-none"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch('')}
+                className="text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 p-0.5 rounded-md transition-colors"
+                title="Очистить поиск"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+        </div>
+
         {loadingTasks ? (
           <div className="h-64 flex items-center justify-center">
             <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
           </div>
-        ) : viewMode === 'kanban' ? (
+        ) : (
           <KanbanBoard
             tasks={tasks}
-            statusFilter={statusFilter}
+            activeColumn={activeColumn}
             onViewTask={handleOpenView}
             onEditTask={(task) => {
               setTaskToEdit(task);
@@ -294,32 +315,20 @@ export const App: React.FC = () => {
               setIsTaskModalOpen(true);
             }}
           />
-        ) : (
-          <ListView
-            tasks={tasks}
-            onViewTask={handleOpenView}
-            onEditTask={(task) => {
-              setTaskToEdit(task);
-              setIsTaskModalOpen(true);
-            }}
-            onDeleteTask={handleDeleteTask}
-            onStatusChange={handleStatusChange}
-          />
         )}
       </main>
 
-      {/* Задача 3: Нижняя плавающая полупрозрачная панель (поиск, приоритеты, вид) */}
+      {/* Нижняя плавающая панель (вкладки прогресса задачи с Фото 3 + приоритеты) */}
       <BottomToolbar
-        search={search}
-        onSearchChange={setSearch}
-        statusFilter={statusFilter}
-        onStatusChange={setStatusFilter}
+        activeColumn={activeColumn}
+        onSelectColumn={setActiveColumn}
+        columnCounts={{
+          todo: tasks.filter((t) => t.status === 'todo').length,
+          in_progress: tasks.filter((t) => t.status === 'in_progress').length,
+          done: tasks.filter((t) => t.status === 'done').length,
+        }}
         priorityFilter={priorityFilter}
         onPriorityChange={setPriorityFilter}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        totalCount={tasks.length}
-        completedCount={completedCount}
       />
 
       {/* Фото 1: Крупный плавающий FAB плюсик в правом нижнем углу */}

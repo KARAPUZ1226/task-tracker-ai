@@ -91,7 +91,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         e.dataTransfer.setData('taskId', String(task.id));
         e.dataTransfer.effectAllowed = 'move';
       }}
-      className="group relative rounded-2xl bg-white dark:bg-[#13161c] border border-zinc-200 dark:border-white/[0.08] hover:border-zinc-300 dark:hover:border-white/[0.18] shadow-sm hover:shadow-lg dark:hover:shadow-black/40 transition-all duration-200 p-4 space-y-3 cursor-grab active:cursor-grabbing"
+      className="group relative rounded-2xl bg-white dark:bg-[#13161c] border border-zinc-200 dark:border-white/[0.08] hover:border-zinc-300 dark:hover:border-white/[0.18] shadow-sm hover:shadow-xl dark:hover:shadow-black/50 transition-all duration-200 hover:-translate-y-1 active:scale-[0.99] p-4 space-y-3 cursor-grab active:cursor-grabbing animate-fade-in"
     >
       {/* Top row: Priority & Card Menu */}
       <div className="flex items-center justify-between gap-2">

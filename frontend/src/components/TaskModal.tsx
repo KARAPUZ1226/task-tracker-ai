@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Task, Priority, Status } from '../types';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
@@ -18,6 +18,10 @@ import {
   Zap,
   Eye,
   Edit3,
+  Edit2,
+  ChevronUp,
+  ChevronDown,
+  GripVertical,
 } from 'lucide-react';
 
 interface TaskModalProps {
@@ -53,6 +57,16 @@ export const TaskModal: React.FC<TaskModalProps> = ({
   const [newSubtaskInput, setNewSubtaskInput] = useState('');
   const [descTab, setDescTab] = useState<'edit' | 'preview'>('edit');
 
+  // Text formatting & selection
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [hasSelection, setHasSelection] = useState(false);
+
+  // Subtask drag & inline edit state
+  const [editingSubtaskIdx, setEditingSubtaskIdx] = useState<number | null>(null);
+  const [editingSubtaskValue, setEditingSubtaskValue] = useState<string>('');
+  const [draggedSubtaskIdx, setDraggedSubtaskIdx] = useState<number | null>(null);
+  const [dragOverSubtaskIdx, setDragOverSubtaskIdx] = useState<number | null>(null);
+
   // AI loading states
   const [loadingDecompose, setLoadingDecompose] = useState(false);
   const [loadingDescription, setLoadingDescription] = useState(false);
@@ -62,6 +76,11 @@ export const TaskModal: React.FC<TaskModalProps> = ({
 
   useEffect(() => {
     setDescTab('edit');
+    setEditingSubtaskIdx(null);
+    setDraggedSubtaskIdx(null);
+    setDragOverSubtaskIdx(null);
+    setHasSelection(false);
+
     if (taskToEdit) {
       setTitle(taskToEdit.title);
       setDescription(taskToEdit.description || '');
@@ -81,7 +100,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
 
   if (!isOpen) return null;
 
-  // AI Handler: Decompose into subtasks
+  // AI Handler: Decompose into subtasks (dynamic count based on complexity, writes fresh from scratch!)
   const handleAIDecompose = async () => {
     if (!title.trim()) {
       toast.error('Введите название задачи для декомпозиции');
@@ -89,17 +108,16 @@ export const TaskModal: React.FC<TaskModalProps> = ({
     }
     setLoadingDecompose(true);
     try {
-      const res = await api.aiDecompose(title, description, apiKey);
+      const res = await api.aiDecompose(title, undefined, apiKey);
       if (res.subtasks && res.subtasks.length > 0) {
-        const combined = Array.from(new Set([...subtasks, ...res.subtasks]));
-        setSubtasks(combined);
+        setSubtasks(res.subtasks);
         if (res.suggested_priority) {
           setPriority(res.suggested_priority);
         }
         toast.success(
           res.is_fallback
             ? `Сгенерировано ${res.subtasks.length} шагов по теме задачи`
-            : `AI разбил задачу на ${res.subtasks.length} подзадач!`
+            : `AI определил сложность: ${res.subtasks.length} подзадач!`
         );
       }
     } catch (err: any) {
@@ -109,7 +127,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
     }
   };
 
-  // AI Handler: Generate Description
+  // AI Handler: Generate Description (writes from scratch, no duplicate concatenation)
   const handleAIGenerateDescription = async () => {
     if (!title.trim()) {
       toast.error('Введите название задачи для генерации описания');
@@ -117,11 +135,11 @@ export const TaskModal: React.FC<TaskModalProps> = ({
     }
     setLoadingDescription(true);
     try {
-      const res = await api.aiGenerateDescription(title, description, apiKey);
+      const res = await api.aiGenerateDescription(title, undefined, apiKey);
       if (res.description) {
         setDescription(res.description);
         setDescTab('preview');
-        toast.success('Описание задачи успешно сформировано');
+        toast.success('Описание задачи успешно сформировано с нуля');
       }
     } catch (err: any) {
       toast.error(err.message || 'Ошибка генерации описания');
@@ -187,6 +205,73 @@ export const TaskModal: React.FC<TaskModalProps> = ({
     setSubtasks(subtasks.filter((_, i) => i !== index));
   };
 
+  // Formatting helper for description
+  const applyFormat = (type: 'bold' | 'italic' | 'underline') => {
+    if (!textareaRef.current) return;
+    const start = textareaRef.current.selectionStart;
+    const end = textareaRef.current.selectionEnd;
+    const currentVal = description;
+    const selected = currentVal.substring(start, end);
+
+    let prefix = '';
+    let suffix = '';
+    if (type === 'bold') {
+      prefix = '**';
+      suffix = '**';
+    } else if (type === 'italic') {
+      prefix = '*';
+      suffix = '*';
+    } else if (type === 'underline') {
+      prefix = '<u>';
+      suffix = '</u>';
+    }
+
+    const defaultPlaceholder = type === 'bold' ? 'жирный текст' : type === 'italic' ? 'курсив' : 'подчеркнутый текст';
+    const textToInsert = selected || defaultPlaceholder;
+    const newVal = currentVal.slice(0, start) + prefix + textToInsert + suffix + currentVal.slice(end);
+    setDescription(newVal);
+
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        const newStart = start + prefix.length;
+        const newEnd = newStart + textToInsert.length;
+        textareaRef.current.setSelectionRange(newStart, newEnd);
+      }
+    }, 0);
+  };
+
+  const checkSelection = () => {
+    if (!textareaRef.current) return;
+    const { selectionStart, selectionEnd } = textareaRef.current;
+    setHasSelection(selectionStart !== selectionEnd);
+  };
+
+  // Subtask reordering and inline editing helpers
+  const handleMoveSubtask = (idx: number, direction: 'up' | 'down') => {
+    const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+    if (targetIdx < 0 || targetIdx >= subtasks.length) return;
+    const updated = [...subtasks];
+    const temp = updated[idx];
+    updated[idx] = updated[targetIdx];
+    updated[targetIdx] = temp;
+    setSubtasks(updated);
+  };
+
+  const handleStartEditingSubtask = (idx: number) => {
+    setEditingSubtaskIdx(idx);
+    setEditingSubtaskValue(subtasks[idx]);
+  };
+
+  const handleSaveSubtaskEdit = (idx: number) => {
+    if (editingSubtaskValue.trim()) {
+      const updated = [...subtasks];
+      updated[idx] = editingSubtaskValue.trim();
+      setSubtasks(updated);
+    }
+    setEditingSubtaskIdx(null);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!title.trim()) {
@@ -225,9 +310,9 @@ export const TaskModal: React.FC<TaskModalProps> = ({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
       <div
-        className="w-full max-w-2xl bg-white dark:bg-[#12141a] border border-zinc-200 dark:border-white/[0.1] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh]"
+        className="w-full max-w-2xl bg-white dark:bg-[#12141a] border border-zinc-200 dark:border-white/[0.1] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -423,12 +508,64 @@ export const TaskModal: React.FC<TaskModalProps> = ({
               </div>
             </div>
 
+            {/* Quick formatting bar (Жирный, Курсив, Подчеркнуть) */}
+            {descTab === 'edit' && (
+              <div className="flex items-center justify-between gap-1 mb-1.5 p-1 rounded-xl bg-zinc-100 dark:bg-[#161922] border border-zinc-200 dark:border-white/[0.06]">
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] uppercase font-bold text-zinc-400 px-1.5">Стиль:</span>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      applyFormat('bold');
+                    }}
+                    className="px-2.5 py-0.5 rounded-lg text-xs font-bold text-zinc-700 dark:text-zinc-200 hover:bg-white dark:hover:bg-zinc-800 shadow-xs transition-all active:scale-95"
+                    title="Сделать жирным (**текст**)"
+                  >
+                    Ж
+                  </button>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      applyFormat('italic');
+                    }}
+                    className="px-2.5 py-0.5 rounded-lg text-xs italic font-serif text-zinc-700 dark:text-zinc-200 hover:bg-white dark:hover:bg-zinc-800 shadow-xs transition-all active:scale-95"
+                    title="Сделать курсивом (*текст*)"
+                  >
+                    К
+                  </button>
+                  <button
+                    type="button"
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      applyFormat('underline');
+                    }}
+                    className="px-2.5 py-0.5 rounded-lg text-xs underline font-sans text-zinc-700 dark:text-zinc-200 hover:bg-white dark:hover:bg-zinc-800 shadow-xs transition-all active:scale-95"
+                    title="Подчеркнуть (<u>текст</u>)"
+                  >
+                    Ч
+                  </button>
+                </div>
+
+                {hasSelection && (
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-medium px-2 animate-in fade-in">
+                    Текст выделен — нажмите кнопку стиля
+                  </span>
+                )}
+              </div>
+            )}
+
             {descTab === 'edit' ? (
               <textarea
+                ref={textareaRef}
                 rows={5}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="Контекст, детали или критерии выполнения (поддерживает ### заголовки, списки)..."
+                onSelect={checkSelection}
+                onKeyUp={checkSelection}
+                onMouseUp={checkSelection}
+                placeholder="Контекст, детали или критерии выполнения (поддерживает ### заголовки, списки, выделение текста)..."
                 className="w-full bg-zinc-100 dark:bg-[#18181c] border border-zinc-300 dark:border-white/[0.08] focus:border-emerald-500 rounded-xl p-3 text-xs text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 outline-none leading-relaxed transition-all resize-none min-h-[110px]"
               />
             ) : (
@@ -444,7 +581,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
             )}
           </div>
 
-          {/* Subtasks (available in both create and edit modes) */}
+          {/* Subtasks (available in both create and edit modes, with drag & drop reorder and inline edit) */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-xs font-medium text-zinc-700 dark:text-zinc-300">
@@ -456,22 +593,142 @@ export const TaskModal: React.FC<TaskModalProps> = ({
             </div>
 
             {subtasks.length > 0 && (
-              <div className="space-y-1.5 mb-2 max-h-44 overflow-y-auto pr-1">
-                {subtasks.map((st, i) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between gap-2 p-2 rounded-lg bg-zinc-50 dark:bg-[#18181c] border border-zinc-200 dark:border-white/[0.06] text-xs text-zinc-800 dark:text-zinc-200"
-                  >
-                    <span className="flex-1 truncate">{i + 1}. {st}</span>
-                    <button
-                      type="button"
-                      onClick={() => handleRemoveSubtask(i)}
-                      className="text-zinc-400 hover:text-rose-500 p-0.5 transition-colors"
+              <div className="space-y-1.5 mb-2 max-h-52 overflow-y-auto pr-1">
+                {subtasks.map((st, i) => {
+                  const isEditing = editingSubtaskIdx === i;
+                  const isDragged = draggedSubtaskIdx === i;
+                  const isDragOver = dragOverSubtaskIdx === i;
+
+                  return (
+                    <div
+                      key={i}
+                      draggable={!isEditing}
+                      onDragStart={() => setDraggedSubtaskIdx(i)}
+                      onDragOver={(e) => {
+                        e.preventDefault();
+                        if (dragOverSubtaskIdx !== i) setDragOverSubtaskIdx(i);
+                      }}
+                      onDragLeave={() => {
+                        if (dragOverSubtaskIdx === i) setDragOverSubtaskIdx(null);
+                      }}
+                      onDrop={(e) => {
+                        e.preventDefault();
+                        if (draggedSubtaskIdx === null || draggedSubtaskIdx === i) {
+                          setDraggedSubtaskIdx(null);
+                          setDragOverSubtaskIdx(null);
+                          return;
+                        }
+                        const updated = [...subtasks];
+                        const [moved] = updated.splice(draggedSubtaskIdx, 1);
+                        updated.splice(i, 0, moved);
+                        setSubtasks(updated);
+                        setDraggedSubtaskIdx(null);
+                        setDragOverSubtaskIdx(null);
+                      }}
+                      className={`flex items-center gap-2 p-2 rounded-xl border text-xs transition-all duration-150 ${
+                        isDragged
+                          ? 'opacity-40 border-dashed border-emerald-500 bg-emerald-500/10'
+                          : isDragOver
+                          ? 'border-emerald-500 bg-emerald-500/10 scale-[1.01]'
+                          : 'bg-zinc-50 dark:bg-[#18181c] border-zinc-200 dark:border-white/[0.08] hover:border-zinc-300 dark:hover:border-white/[0.15]'
+                      }`}
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
+                      {/* Drag Handle */}
+                      <div
+                        className="cursor-grab active:cursor-grabbing text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200 shrink-0"
+                        title="Перетащить вверх/вниз"
+                      >
+                        <GripVertical className="w-3.5 h-3.5" />
+                      </div>
+
+                      {/* Number and Text / Inline Input */}
+                      {isEditing ? (
+                        <div className="flex-1 flex items-center gap-1.5">
+                          <input
+                            type="text"
+                            autoFocus
+                            value={editingSubtaskValue}
+                            onChange={(e) => setEditingSubtaskValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                handleSaveSubtaskEdit(i);
+                              } else if (e.key === 'Escape') {
+                                setEditingSubtaskIdx(null);
+                              }
+                            }}
+                            className="flex-1 bg-white dark:bg-black/40 border border-emerald-500 rounded-lg px-2 py-1 text-xs text-zinc-900 dark:text-white outline-none"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleSaveSubtaskEdit(i)}
+                            className="p-1 rounded bg-emerald-600 hover:bg-emerald-500 text-white transition-colors"
+                            title="Сохранить"
+                          >
+                            <Check className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingSubtaskIdx(null)}
+                            className="p-1 rounded hover:bg-zinc-200 dark:hover:bg-white/[0.1] text-zinc-400 transition-colors"
+                            title="Отмена"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ) : (
+                        <span
+                          onDoubleClick={() => handleStartEditingSubtask(i)}
+                          className="flex-1 truncate text-zinc-800 dark:text-zinc-200 cursor-pointer select-none"
+                          title="Двойной клик для редактирования"
+                        >
+                          <span className="font-semibold text-zinc-400 dark:text-zinc-500 mr-1.5">{i + 1}.</span>
+                          {st}
+                        </span>
+                      )}
+
+                      {/* Controls: Edit, Up, Down, Delete */}
+                      {!isEditing && (
+                        <div className="flex items-center gap-0.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleStartEditingSubtask(i)}
+                            className="p-1 rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-white/[0.08] transition-colors"
+                            title="Редактировать название"
+                          >
+                            <Edit2 className="w-3 h-3" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={i === 0}
+                            onClick={() => handleMoveSubtask(i, 'up')}
+                            className="p-1 rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-white/[0.08] disabled:opacity-25 transition-colors"
+                            title="Переместить вверх"
+                          >
+                            <ChevronUp className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={i === subtasks.length - 1}
+                            onClick={() => handleMoveSubtask(i, 'down')}
+                            className="p-1 rounded text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 hover:bg-zinc-200 dark:hover:bg-white/[0.08] disabled:opacity-25 transition-colors"
+                            title="Переместить вниз"
+                          >
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveSubtask(i)}
+                            className="p-1 rounded text-zinc-400 hover:text-rose-500 hover:bg-rose-500/10 transition-colors ml-0.5"
+                            title="Удалить подзадачу"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             )}
 
