@@ -1,20 +1,24 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from './context/AuthContext';
+import { useTheme } from './context/ThemeContext';
 import { api } from './services/api';
 import { Task, Status, Priority } from './types';
 import { Navbar } from './components/Navbar';
-import { FilterBar } from './components/FilterBar';
 import { KanbanBoard } from './components/KanbanBoard';
 import { ListView } from './components/ListView';
 import { TaskModal } from './components/TaskModal';
+import { TaskDetailModal } from './components/TaskDetailModal';
 import { SettingsModal } from './components/SettingsModal';
 import { AuthModal } from './components/AuthModal';
+import { BottomToolbar } from './components/BottomToolbar';
+import { FloatingAddButton } from './components/FloatingAddButton';
 import { Toaster, toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import { Loader2 } from 'lucide-react';
 
 export const App: React.FC = () => {
   const { user, isLoading: authLoading } = useAuth();
+  const { theme } = useTheme();
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loadingTasks, setLoadingTasks] = useState(false);
@@ -29,6 +33,11 @@ export const App: React.FC = () => {
   const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [initialStatus, setInitialStatus] = useState<Status>('todo');
+
+  // View task details state (Задача 4)
+  const [taskToView, setTaskToView] = useState<Task | null>(null);
+  const [isDetailOpen, setIsDetailOpen] = useState(false);
+
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   const fireConfetti = useCallback(() => {
@@ -36,7 +45,7 @@ export const App: React.FC = () => {
       particleCount: 100,
       spread: 70,
       origin: { y: 0.6 },
-      colors: ['#6366f1', '#10b981', '#f59e0b', '#ec4899', '#3b82f6'],
+      colors: ['#10b981', '#f59e0b', '#06b6d4', '#ec4899', '#8b5cf6'],
     });
   }, []);
 
@@ -68,6 +77,7 @@ export const App: React.FC = () => {
         e.key.toLowerCase() === 'n' &&
         !['input', 'textarea', 'select'].includes((e.target as HTMLElement).tagName.toLowerCase()) &&
         !isTaskModalOpen &&
+        !isDetailOpen &&
         !isSettingsOpen &&
         user
       ) {
@@ -79,7 +89,7 @@ export const App: React.FC = () => {
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isTaskModalOpen, isSettingsOpen, user]);
+  }, [isTaskModalOpen, isDetailOpen, isSettingsOpen, user]);
 
   // Handlers
   const handleSaveTask = async (data: {
@@ -100,6 +110,9 @@ export const App: React.FC = () => {
         subtasks: data.subtasks,
       });
       setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
+      if (taskToView && taskToView.id === updated.id) {
+        setTaskToView(updated);
+      }
       toast.success('Задача обновлена');
       if (data.status === 'done' && taskToEdit.status !== 'done') {
         fireConfetti();
@@ -121,6 +134,10 @@ export const App: React.FC = () => {
     try {
       await api.deleteTask(id);
       setTasks((prev) => prev.filter((t) => t.id !== id));
+      if (taskToView && taskToView.id === id) {
+        setIsDetailOpen(false);
+        setTaskToView(null);
+      }
       toast.success('Задача удалена');
     } catch (err: any) {
       toast.error(err.message || 'Ошибка удаления задачи');
@@ -131,13 +148,16 @@ export const App: React.FC = () => {
     try {
       const updated = await api.updateTask(id, { status: newStatus });
       setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
+      if (taskToView && taskToView.id === id) {
+        setTaskToView(updated);
+      }
       if (newStatus === 'done') {
         fireConfetti();
         toast.success('🎉 Задача выполнена!');
+      } else if (newStatus === 'in_progress') {
+        toast.info('Задача переведена в работу');
       } else {
-        toast.info(
-          newStatus === 'in_progress' ? 'Задача переведена в работу' : 'Задача возвращена в To Do'
-        );
+        toast.info('Задача возвращена к выполнению');
       }
     } catch (err: any) {
       toast.error(err.message || 'Ошибка обновления статуса');
@@ -158,7 +178,11 @@ export const App: React.FC = () => {
             fireConfetti();
             toast.success('🎉 Все подзадачи завершены!');
           }
-          return { ...task, subtasks: updatedSubs };
+          const updatedTask = { ...task, subtasks: updatedSubs };
+          if (taskToView && taskToView.id === taskId) {
+            setTaskToView(updatedTask);
+          }
+          return updatedTask;
         })
       );
     } catch (err: any) {
@@ -170,9 +194,14 @@ export const App: React.FC = () => {
     try {
       const newSub = await api.createSubtask(taskId, title);
       setTasks((prev) =>
-        prev.map((task) =>
-          task.id === taskId ? { ...task, subtasks: [...task.subtasks, newSub] } : task
-        )
+        prev.map((task) => {
+          if (task.id !== taskId) return task;
+          const updatedTask = { ...task, subtasks: [...task.subtasks, newSub] };
+          if (taskToView && taskToView.id === taskId) {
+            setTaskToView(updatedTask);
+          }
+          return updatedTask;
+        })
       );
       toast.success('Подзадача добавлена');
     } catch (err: any) {
@@ -184,11 +213,17 @@ export const App: React.FC = () => {
     try {
       await api.deleteSubtask(taskId, subtaskId);
       setTasks((prev) =>
-        prev.map((task) =>
-          task.id === taskId
-            ? { ...task, subtasks: task.subtasks.filter((s) => s.id !== subtaskId) }
-            : task
-        )
+        prev.map((task) => {
+          if (task.id !== taskId) return task;
+          const updatedTask = {
+            ...task,
+            subtasks: task.subtasks.filter((s) => s.id !== subtaskId),
+          };
+          if (taskToView && taskToView.id === taskId) {
+            setTaskToView(updatedTask);
+          }
+          return updatedTask;
+        })
       );
       toast.success('Подзадача удалена');
     } catch (err: any) {
@@ -196,10 +231,21 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleOpenView = (task: Task) => {
+    setTaskToView(task);
+    setIsDetailOpen(true);
+  };
+
+  const handleOpenEditFromView = (task: Task) => {
+    setIsDetailOpen(false);
+    setTaskToEdit(task);
+    setIsTaskModalOpen(true);
+  };
+
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#09090b]">
-        <Loader2 className="w-8 h-8 text-brand-500 animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-[#090a0f]">
+        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
       </div>
     );
   }
@@ -207,7 +253,7 @@ export const App: React.FC = () => {
   if (!user) {
     return (
       <>
-        <Toaster theme="dark" position="bottom-right" richColors />
+        <Toaster theme={theme} position="bottom-right" richColors />
         <AuthModal />
       </>
     );
@@ -216,41 +262,22 @@ export const App: React.FC = () => {
   const completedCount = tasks.filter((t) => t.status === 'done').length;
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#09090b] text-[#f4f4f5]">
-      <Toaster theme="dark" position="bottom-right" richColors />
+    <div className="min-h-screen flex flex-col bg-zinc-50 dark:bg-[#090a0f] text-zinc-900 dark:text-zinc-100 transition-colors duration-300">
+      <Toaster theme={theme} position="top-right" richColors />
 
-      {/* Navigation */}
-      <Navbar
-        onOpenNewTask={() => {
-          setTaskToEdit(null);
-          setInitialStatus('todo');
-          setIsTaskModalOpen(true);
-        }}
-        onOpenSettings={() => setIsSettingsOpen(true)}
-      />
+      {/* Navigation with Minimalist Logo, Theme Switcher & 3-stripe Menu */}
+      <Navbar onOpenSettings={() => setIsSettingsOpen(true)} />
 
       {/* Main Content */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
-        <FilterBar
-          search={search}
-          onSearchChange={setSearch}
-          statusFilter={statusFilter}
-          onStatusChange={setStatusFilter}
-          priorityFilter={priorityFilter}
-          onPriorityChange={setPriorityFilter}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-          totalCount={tasks.length}
-          completedCount={completedCount}
-        />
-
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 relative">
         {loadingTasks ? (
           <div className="h-64 flex items-center justify-center">
-            <Loader2 className="w-6 h-6 text-brand-500 animate-spin" />
+            <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
           </div>
         ) : viewMode === 'kanban' ? (
           <KanbanBoard
             tasks={tasks}
+            onViewTask={handleOpenView}
             onEditTask={(task) => {
               setTaskToEdit(task);
               setIsTaskModalOpen(true);
@@ -269,6 +296,7 @@ export const App: React.FC = () => {
         ) : (
           <ListView
             tasks={tasks}
+            onViewTask={handleOpenView}
             onEditTask={(task) => {
               setTaskToEdit(task);
               setIsTaskModalOpen(true);
@@ -279,7 +307,46 @@ export const App: React.FC = () => {
         )}
       </main>
 
-      {/* Task Modal (Create / Edit) */}
+      {/* Задача 3: Нижняя плавающая полупрозрачная панель (поиск, приоритеты, вид) */}
+      <BottomToolbar
+        search={search}
+        onSearchChange={setSearch}
+        statusFilter={statusFilter}
+        onStatusChange={setStatusFilter}
+        priorityFilter={priorityFilter}
+        onPriorityChange={setPriorityFilter}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        totalCount={tasks.length}
+        completedCount={completedCount}
+      />
+
+      {/* Фото 1: Крупный плавающий FAB плюсик в правом нижнем углу */}
+      <FloatingAddButton
+        onClick={() => {
+          setTaskToEdit(null);
+          setInitialStatus('todo');
+          setIsTaskModalOpen(true);
+        }}
+      />
+
+      {/* Задача 4: Модальное окно просмотра деталей задачи */}
+      <TaskDetailModal
+        task={taskToView}
+        isOpen={isDetailOpen}
+        onClose={() => {
+          setIsDetailOpen(false);
+          setTaskToView(null);
+        }}
+        onEdit={handleOpenEditFromView}
+        onDelete={handleDeleteTask}
+        onStatusChange={handleStatusChange}
+        onToggleSubtask={handleToggleSubtask}
+        onAddSubtask={handleAddSubtask}
+        onDeleteSubtask={handleDeleteSubtask}
+      />
+
+      {/* Модальное окно создания и редактирования задачи */}
       <TaskModal
         isOpen={isTaskModalOpen}
         onClose={() => setIsTaskModalOpen(false)}
@@ -288,7 +355,7 @@ export const App: React.FC = () => {
         onSave={handleSaveTask}
       />
 
-      {/* Settings Modal */}
+      {/* Настройки AI ключа */}
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
     </div>
   );

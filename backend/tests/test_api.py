@@ -276,3 +276,30 @@ def test_edge_cases_and_field_clearing(client):
     assert cleared["deadline"] is None
     assert len(cleared["subtasks"]) == 1
     assert cleared["subtasks"][0]["title"] == "Новая подзадача через patch"
+
+def test_ai_context_aware_generation(client):
+    reg = client.post("/api/auth/register", json={
+        "email": "user6@example.com",
+        "password": "password6"
+    })
+    token = reg.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Test household task does not mention software architecture
+    res_clean = client.post("/api/ai/generate-description", headers=headers, json={
+        "title": "Помыть посуду на кухне"
+    })
+    assert res_clean.status_code == 200
+    desc_clean = res_clean.json()["description"]
+    assert "чистоты архитектуры" not in desc_clean
+    assert "###" in desc_clean
+
+    res_clean_dec = client.post("/api/ai/decompose", headers=headers, json={
+        "title": "Помыть посуду на кухне"
+    })
+    assert res_clean_dec.status_code == 200
+    steps = res_clean_dec.json()["subtasks"]
+    assert len(steps) >= 3
+    # Check that steps are about cleaning, not code
+    assert any("чист" in s.lower() or "инвентар" in s.lower() or "посуд" in s.lower() or "пространств" in s.lower() for s in steps)
+

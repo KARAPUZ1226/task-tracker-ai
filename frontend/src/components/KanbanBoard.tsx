@@ -5,6 +5,7 @@ import { Circle, Clock, CheckCircle2, Plus } from 'lucide-react';
 
 interface KanbanBoardProps {
   tasks: Task[];
+  onViewTask: (task: Task) => void;
   onEditTask: (task: Task) => void;
   onDeleteTask: (id: number) => void;
   onStatusChange: (id: number, status: Status) => void;
@@ -16,6 +17,7 @@ interface KanbanBoardProps {
 
 export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   tasks,
+  onViewTask,
   onEditTask,
   onDeleteTask,
   onStatusChange,
@@ -24,31 +26,30 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   onDeleteSubtask,
   onOpenCreateWithStatus,
 }) => {
-  // Mobile column active tab
   const [activeMobileColumn, setActiveMobileColumn] = useState<Status>('todo');
   const [dragOverColumn, setDragOverColumn] = useState<Status | null>(null);
 
   const columns: { id: Status; title: string; icon: React.ReactNode; color: string; badge: string }[] = [
     {
       id: 'todo',
-      title: 'К выполнению (To Do)',
+      title: 'К выполнению',
       icon: <Circle className="w-4 h-4 text-zinc-400" />,
-      color: 'border-zinc-500/20',
-      badge: 'bg-zinc-500/10 text-zinc-300',
+      color: 'border-zinc-200 dark:border-zinc-800/80',
+      badge: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300',
     },
     {
       id: 'in_progress',
-      title: 'В процессе (In Progress)',
-      icon: <Clock className="w-4 h-4 text-amber-400 animate-spin-slow" />,
+      title: 'В работе',
+      icon: <Clock className="w-4 h-4 text-amber-500 animate-spin-slow" />,
       color: 'border-amber-500/20',
-      badge: 'bg-amber-500/10 text-amber-400',
+      badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
     },
     {
       id: 'done',
-      title: 'Завершено (Done)',
-      icon: <CheckCircle2 className="w-4 h-4 text-emerald-400" />,
+      title: 'Готово',
+      icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" />,
       color: 'border-emerald-500/20',
-      badge: 'bg-emerald-500/10 text-emerald-400',
+      badge: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
     },
   ];
 
@@ -57,28 +58,29 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   return (
     <div className="space-y-4">
       {/* Mobile Column Tabs */}
-      <div className="flex md:hidden bg-[#121215] p-1 rounded-xl border border-white/[0.08]">
+      <div className="flex md:hidden bg-zinc-100 dark:bg-[#12141a] p-1 rounded-xl border border-zinc-200 dark:border-white/[0.08]">
         {columns.map((col) => {
           const count = getTasksForColumn(col.id).length;
+          const isActive = activeMobileColumn === col.id;
           return (
             <button
               key={col.id}
               onClick={() => setActiveMobileColumn(col.id)}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-medium transition-all ${
-                activeMobileColumn === col.id
-                  ? 'bg-brand-600 text-white shadow-sm'
-                  : 'text-zinc-400 hover:text-white'
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-semibold transition-all ${
+                isActive
+                  ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm'
+                  : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
               }`}
             >
-              <span>{col.id === 'todo' ? 'To Do' : col.id === 'in_progress' ? 'В работе' : 'Готово'}</span>
-              <span className="px-1.5 py-0.2 bg-black/30 rounded-full text-[10px]">{count}</span>
+              <span>{col.title}</span>
+              <span className="px-1.5 py-0.2 bg-zinc-200 dark:bg-black/30 rounded-full text-[10px]">{count}</span>
             </button>
           );
         })}
       </div>
 
       {/* Grid columns */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start pb-24">
         {columns.map((col) => {
           const colTasks = getTasksForColumn(col.id);
           const isHiddenOnMobile = activeMobileColumn !== col.id;
@@ -93,7 +95,6 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                 if (dragOverColumn !== col.id) setDragOverColumn(col.id);
               }}
               onDragLeave={(e) => {
-                // Only unset if leaving the column container
                 if (!e.currentTarget.contains(e.relatedTarget as Node)) {
                   setDragOverColumn(null);
                 }
@@ -107,15 +108,17 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                   onStatusChange(droppedTaskId, col.id);
                 }
               }}
-              className={`flex flex-col rounded-2xl bg-[#0e0e11] border p-4 min-h-[500px] transition-all duration-200 ${
-                isDropActive ? 'border-brand-500 bg-brand-950/10 shadow-lg shadow-brand-500/10 scale-[1.01]' : col.color
+              className={`flex flex-col rounded-2xl bg-zinc-50/50 dark:bg-[#0e1015] border p-4 min-h-[500px] transition-all duration-200 ${
+                isDropActive
+                  ? 'border-emerald-500 bg-emerald-500/5 shadow-lg shadow-emerald-500/10 scale-[1.01]'
+                  : col.color
               } ${isHiddenOnMobile ? 'hidden md:flex' : 'flex'}`}
             >
               {/* Column Header */}
-              <div className="flex items-center justify-between pb-3 mb-3 border-b border-white/[0.06]">
+              <div className="flex items-center justify-between pb-3 mb-3 border-b border-zinc-200 dark:border-white/[0.06]">
                 <div className="flex items-center gap-2">
                   {col.icon}
-                  <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-300">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-300">
                     {col.title}
                   </h3>
                   <span className={`text-[11px] font-bold px-2 py-0.5 rounded-full ${col.badge}`}>
@@ -123,8 +126,9 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                   </span>
                 </div>
                 <button
+                  type="button"
                   onClick={() => onOpenCreateWithStatus(col.id)}
-                  className="p-1 rounded-lg text-zinc-400 hover:text-white hover:bg-white/[0.06] transition-colors"
+                  className="p-1 rounded-lg text-zinc-400 hover:text-zinc-700 dark:hover:text-white hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
                   title="Добавить в эту колонку"
                 >
                   <Plus className="w-4 h-4" />
@@ -138,6 +142,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     <TaskCard
                       key={task.id}
                       task={task}
+                      onView={onViewTask}
                       onEdit={onEditTask}
                       onDelete={onDeleteTask}
                       onStatusChange={onStatusChange}
@@ -147,11 +152,12 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
                     />
                   ))
                 ) : (
-                  <div className="h-40 flex flex-col items-center justify-center rounded-xl border border-dashed border-white/[0.06] text-center p-4">
-                    <p className="text-xs text-zinc-500">Нет задач в этой колонке</p>
+                  <div className="h-40 flex flex-col items-center justify-center rounded-xl border border-dashed border-zinc-200 dark:border-white/[0.08] text-center p-4">
+                    <p className="text-xs text-zinc-400 dark:text-zinc-500">Нет задач в этой колонке</p>
                     <button
+                      type="button"
                       onClick={() => onOpenCreateWithStatus(col.id)}
-                      className="mt-2 text-[11px] text-brand-400 hover:underline flex items-center gap-1"
+                      className="mt-2 text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 font-medium"
                     >
                       <Plus className="w-3 h-3" /> Создать первую
                     </button>
