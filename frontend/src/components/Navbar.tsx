@@ -113,11 +113,11 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSettings, onOpenCreate }) 
             </button>
           </div>
 
-          {/* Mobile-only '+' Button: строго сверху ТОЛЬКО на мобильных устройствах (<sm) */}
+          {/* Mobile-only '+' Button: строго сверху ТОЛЬКО на мобильных устройствах (<md) */}
           <button
             type="button"
             onClick={onOpenCreate}
-            className="sm:hidden flex items-center justify-center w-9 h-9 rounded-xl bg-emerald-600 hover:bg-emerald-500 active:scale-90 text-white shadow-md shadow-emerald-600/30 ring-1 ring-white/20 transition-all duration-200 shrink-0"
+            className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl bg-emerald-600 hover:bg-emerald-500 hover:scale-105 active:scale-90 hover:rotate-90 text-white shadow-md shadow-emerald-600/30 hover:shadow-emerald-500/50 ring-1 ring-white/20 transition-all duration-300 shrink-0"
             title="Создать новую задачу"
             aria-label="Создать новую задачу"
           >

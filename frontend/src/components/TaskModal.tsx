@@ -321,9 +321,9 @@ export const TaskModal: React.FC<TaskModalProps> = ({
   ];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
       <div
-        className="w-full max-w-2xl bg-white dark:bg-[#12141a] border border-zinc-200 dark:border-white/[0.1] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-in zoom-in-95 duration-200"
+        className="w-full max-w-2xl bg-white dark:bg-[#12141a] border border-zinc-200 dark:border-white/[0.1] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[92vh] animate-pop-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
@@ -523,7 +523,7 @@ export const TaskModal: React.FC<TaskModalProps> = ({
               <div className="relative">
                 {/* Floating Formatting Toolbar: pops up STRICTLY on text selection! */}
                 {hasSelection && (
-                  <div className="absolute -top-10 right-1 sm:right-2 z-20 flex items-center gap-0.5 sm:gap-1 p-1 rounded-xl bg-zinc-900/95 dark:bg-[#1e2029] text-white shadow-2xl border border-white/20 backdrop-blur-md animate-in fade-in zoom-in-95 duration-150">
+                  <div className="absolute -top-10 right-1 sm:right-2 z-20 flex items-center gap-0.5 sm:gap-1 p-1 rounded-xl bg-zinc-900/95 dark:bg-[#1e2029] text-white shadow-2xl border border-white/20 backdrop-blur-md animate-pop-in">
                     <span className="text-[10px] font-bold text-emerald-400 px-1 sm:px-1.5 uppercase tracking-wider hidden sm:inline">
                       Формат:
                     </span>

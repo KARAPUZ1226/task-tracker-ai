@@ -112,7 +112,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               e.stopPropagation();
               setMenuOpen(!menuOpen);
             }}
-            className="p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-white rounded-lg hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
+            className="p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-white rounded-lg hover:bg-zinc-100 dark:hover:bg-white/[0.06] active:scale-90 hover:scale-110 transition-all duration-200"
+            title="Опции задачи"
           >
             <MoreVertical className="w-3.5 h-3.5" />
           </button>
@@ -127,7 +128,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
                 }}
               />
               <div
-                className="absolute right-0 top-6 z-30 w-40 rounded-xl bg-white dark:bg-[#1c1f26] border border-zinc-200 dark:border-white/[0.1] shadow-xl py-1 text-xs"
+                className="absolute right-0 top-6 z-30 w-40 rounded-xl bg-white dark:bg-[#1c1f26] border border-zinc-200 dark:border-white/[0.1] shadow-xl py-1 text-xs animate-pop-in"
                 onClick={(e) => e.stopPropagation()}
               >
                 <button
