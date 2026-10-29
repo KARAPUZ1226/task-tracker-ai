@@ -122,7 +122,48 @@ def _heuristic_deadline(title: str, description: Optional[str] = None, priority:
         "reasoning": reason
     }
 
+async def _call_gemini(prompt: str, key: str, response_format_json: bool = True) -> Optional[str]:
+    # Fast 5s timeout to ensure high API responsiveness
+    models_to_try = [settings.GEMINI_MODEL, "gemini-flash-lite-latest"]
+    payload: Dict[str, Any] = {
+        "contents": [{"parts": [{"text": prompt}]}]
+    }
+    if response_format_json:
+        payload["generationConfig"] = {"responseMimeType": "application/json"}
+
+    for model in models_to_try:
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
+        try:
+            async with httpx.AsyncClient(timeout=6.0) as client:
+                response = await client.post(url, json=payload)
+                if response.status_code == 200:
+                    data = response.json()
+                    candidates = data.get("candidates", [])
+                    if candidates:
+                        parts = candidates[0].get("content", {}).get("parts", [])
+                        if parts:
+                            return parts[0].get("text")
+                else:
+                    logger.warning(f"Gemini {model} returned {response.status_code}")
+        except Exception as e:
+            logger.warning(f"Error calling Gemini {model}: {e}")
+    return None
+
 async def _call_llm(messages: List[Dict[str, str]], api_key: Optional[str] = None, response_format_json: bool = True) -> Optional[str]:
+    # Check if Gemini key is provided (either via settings or user input starting with AQ.)
+    gemini_key = None
+    if api_key and (api_key.startswith("AQ.") or "AIza" in api_key):
+        gemini_key = api_key
+    elif settings.GEMINI_API_KEY:
+        gemini_key = settings.GEMINI_API_KEY
+
+    if gemini_key:
+        prompt_text = "\n\n".join([f"{m['role'].upper()}: {m['content']}" for m in messages])
+        gemini_res = await _call_gemini(prompt_text, gemini_key, response_format_json)
+        if gemini_res:
+            return gemini_res
+
+    # Try OpenAI compatible API
     key = api_key or settings.OPENAI_API_KEY
     if not key:
         return None
