@@ -58,7 +58,7 @@ export const BottomToolbar: React.FC<BottomToolbarProps> = ({
       {/* Стек полупрозрачных блоков внизу (снизу вверх: Категории -> Приоритеты -> Поиск + Создание задачи) */}
       <div className="fixed bottom-3 sm:bottom-5 left-1/2 -translate-x-1/2 z-40 max-w-lg w-[calc(100%-1.5rem)] flex flex-col items-center pointer-events-none">
         {/* 1. Блок поиска и кнопка «+» (гармонично рядом, всегда доступны в портретной и ландшафтной ориентациях) */}
-        <div className="pointer-events-auto w-full mb-2 sm:mb-2.5 flex items-stretch gap-2 animate-slide-up-1">
+        <div className="pointer-events-auto w-full mb-2 sm:mb-2.5 flex items-center gap-2 animate-slide-up-1">
           <div className="flex-1 min-w-0 p-1.5 sm:p-2 rounded-2xl bg-white/75 dark:bg-[#12141a]/75 backdrop-blur-xl border border-zinc-200/70 dark:border-white/10 shadow-xl shadow-black/10 transition-all duration-300 hover:border-zinc-300 dark:hover:border-white/20 hover:-translate-y-0.5">
             <div className="relative flex items-center bg-zinc-100/80 dark:bg-black/40 rounded-xl border border-zinc-200/60 dark:border-white/[0.08] px-3 py-2 sm:py-2.5 focus-within:ring-2 focus-within:ring-emerald-500/40 focus-within:border-emerald-500 transition-all duration-200">
               <Search className="w-4 h-4 text-zinc-400 dark:text-zinc-500 mr-2 shrink-0 transition-colors" />
@@ -84,7 +84,7 @@ export const BottomToolbar: React.FC<BottomToolbarProps> = ({
 
           <FloatingAddButton
             onClick={onOpenCreate}
-            className="w-12 sm:w-[54px] self-stretch hover:-translate-y-0.5"
+            className="w-12 h-12 sm:w-[52px] sm:h-[52px] aspect-square shrink-0 hover:-translate-y-0.5"
           />
         </div>
 

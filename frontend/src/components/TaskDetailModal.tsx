@@ -114,9 +114,6 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
               <span className={`w-1.5 h-1.5 rounded-full ${p.dot}`} />
               <span>{p.label}</span>
             </span>
-            <span className={`inline-flex items-center text-xs font-medium px-2.5 py-1 rounded-full border ${s.badge}`}>
-              {s.label}
-            </span>
           </div>
 
           <div className="flex items-center gap-2">
@@ -141,26 +138,35 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
 
         {/* Content Body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Title */}
-          <div>
-            <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight leading-snug">
-              {task.title}
-            </h2>
-            {deadlineFormatted && (
-              <div className="flex items-center gap-1.5 mt-2 text-xs">
-                {isOverdue ? (
-                  <span className="flex items-center gap-1 text-rose-500 font-medium">
-                    <AlertCircle className="w-3.5 h-3.5" />
-                    <span>Дедлайн: {deadlineFormatted} (просрочено)</span>
-                  </span>
-                ) : (
-                  <span className="flex items-center gap-1 text-zinc-500 dark:text-zinc-400">
-                    <Calendar className="w-3.5 h-3.5" />
-                    <span>Дедлайн: {deadlineFormatted}</span>
-                  </span>
-                )}
-              </div>
-            )}
+          {/* Title & Status (плашка статуса перенесена сюда на 5% меньше) */}
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1 min-w-0">
+              <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight leading-snug break-words">
+                {task.title}
+              </h2>
+              {deadlineFormatted && (
+                <div className="flex items-center gap-1.5 mt-2 text-xs">
+                  {isOverdue ? (
+                    <span className="flex items-center gap-1 text-rose-500 font-medium">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      <span>Дедлайн: {deadlineFormatted} (просрочено)</span>
+                    </span>
+                  ) : (
+                    <span className="flex items-center gap-1 text-zinc-500 dark:text-zinc-400">
+                      <Calendar className="w-3.5 h-3.5" />
+                      <span>Дедлайн: {deadlineFormatted}</span>
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Плашка статуса в выделенной области на фото 2 */}
+            <span
+              className={`inline-flex items-center shrink-0 text-[11px] font-medium px-2.5 py-0.5 rounded-full border shadow-xs ${s.badge}`}
+            >
+              {s.label}
+            </span>
           </div>
 
           {/* Description with rich Markdown View */}
