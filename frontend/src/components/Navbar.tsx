@@ -182,6 +182,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSettings, onOpenCreate }) 
                 {/* Actions */}
                 <div className="space-y-0.5 pt-1">
                   <button
+                    type="button"
                     onClick={() => {
                       setMenuOpen(false);
                       onOpenCreate();
