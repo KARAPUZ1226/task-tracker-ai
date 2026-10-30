@@ -113,17 +113,6 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSettings, onOpenCreate }) 
             </button>
           </div>
 
-          {/* Mobile-only '+' Button: строго сверху ТОЛЬКО на мобильных устройствах (<md) */}
-          <button
-            type="button"
-            onClick={onOpenCreate}
-            className="md:hidden flex items-center justify-center w-9 h-9 rounded-xl bg-emerald-600 hover:bg-emerald-500 hover:scale-105 active:scale-90 hover:rotate-90 text-white shadow-md shadow-emerald-600/30 hover:shadow-emerald-500/50 ring-1 ring-white/20 transition-all duration-300 shrink-0"
-            title="Создать новую задачу"
-            aria-label="Создать новую задачу"
-          >
-            <Plus className="w-5 h-5 stroke-[2.5]" />
-          </button>
-
           {/* Three Stripes Hamburger Button (Задача 5) */}
           <div className="relative">
             <button
@@ -192,6 +181,19 @@ export const Navbar: React.FC<NavbarProps> = ({ onOpenSettings, onOpenCreate }) 
 
                 {/* Actions */}
                 <div className="space-y-0.5 pt-1">
+                  <button
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onOpenCreate();
+                    }}
+                    className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
+                  >
+                    <div className="flex items-center gap-2">
+                      <Plus className="w-4 h-4 text-emerald-500" />
+                      <span>Создать новую задачу</span>
+                    </div>
+                  </button>
+
                   <button
                     onClick={() => {
                       setMenuOpen(false);
