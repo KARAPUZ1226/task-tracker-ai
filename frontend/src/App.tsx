@@ -362,7 +362,7 @@ export const App: React.FC = () => {
       }[] = [
         {
           title: '✨ Попробовать AI Smart Assist для декомпозиции',
-          description: '### Умный AI-ассистент\\n- Откройте эту задачу\\n- Измените название на любую цель\\n- Нажмите **✨ Умное заполнение** для мгновенной генерации структуры',
+          description: '### Умный AI-ассистент\n- Откройте эту задачу\n- Измените название на любую цель\n- Нажмите **✨ Умное заполнение** для мгновенной генерации структуры',
           priority: 'high',
           status: 'todo',
           tags: ['AI', 'Обучение'],
@@ -503,6 +503,8 @@ export const App: React.FC = () => {
         ) : (
           <ListView
             tasks={tasks}
+            hasActiveFilters={hasActiveFilters}
+            onResetFilters={handleResetFilters}
             onSeedDemoTasks={handleSeedDemoTasks}
             onViewTask={handleOpenView}
             onEditTask={(task) => {

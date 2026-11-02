@@ -9,7 +9,9 @@ interface MarkdownViewProps {
 export const MarkdownView: React.FC<MarkdownViewProps> = ({ content, className = '' }) => {
   if (!content) return null;
 
-  const lines = content.split('\n');
+  // Normalize literal '\n' sequences if any, and split lines
+  const normalized = content.replace(/\\n/g, '\n');
+  const lines = normalized.split('\n');
 
   // Helper to parse inline formatting like **bold**, *italic*, <u>underline</u> and `code`
   const renderInline = (text: string) => {

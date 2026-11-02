@@ -27,6 +27,8 @@ interface ListViewProps {
   onDeleteSubtask?: (taskId: number, subtaskId: number) => void;
   onOpenCreate: () => void;
   onSeedDemoTasks?: () => void;
+  hasActiveFilters?: boolean;
+  onResetFilters?: () => void;
 }
 
 export const ListView: React.FC<ListViewProps> = ({
@@ -41,6 +43,8 @@ export const ListView: React.FC<ListViewProps> = ({
   onDeleteSubtask,
   onOpenCreate,
   onSeedDemoTasks,
+  hasActiveFilters = false,
+  onResetFilters,
 }) => {
   const [expandedTaskIds, setExpandedTaskIds] = useState<Set<number>>(new Set());
 
@@ -98,10 +102,37 @@ export const ListView: React.FC<ListViewProps> = ({
   };
 
   if (tasks.length === 0) {
+    if (hasActiveFilters) {
+      return (
+        <div className="rounded-3xl bg-md-surface-container-low border border-md-outline-variant/20 p-8 sm:p-12 text-center text-md-on-surface-variant">
+          <p className="text-base font-semibold text-md-on-surface mb-2">Задачи не найдены</p>
+          <p className="text-xs mb-5">По выбранным фильтрам ничего не найдено</p>
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            {onResetFilters && (
+              <button
+                type="button"
+                onClick={onResetFilters}
+                className="px-5 py-2.5 rounded-full text-xs font-semibold bg-md-primary-container text-md-on-primary-container hover:shadow-md transition-all active:scale-95"
+              >
+                Сбросить фильтры
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={onOpenCreate}
+              className="px-5 py-2.5 rounded-full text-xs font-semibold bg-md-surface-container hover:bg-md-surface-container-high border border-md-outline-variant/30 text-md-on-surface transition-all active:scale-95"
+            >
+              + Создать задачу
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <div className="rounded-3xl bg-md-surface-container-low border border-md-outline-variant/20 p-8 sm:p-12 text-center text-md-on-surface-variant">
-        <p className="text-base font-semibold text-md-on-surface mb-2">Задачи не найдены</p>
-        <p className="text-xs mb-5">Попробуйте изменить условия поиска или создайте новую задачу</p>
+        <p className="text-base font-semibold text-md-on-surface mb-2">Ваш список задач пока пуст</p>
+        <p className="text-xs mb-5">Создайте свою первую задачу или загрузите демонстрационные примеры в 1 клик</p>
         <div className="flex flex-wrap items-center justify-center gap-3">
           <button
             type="button"
