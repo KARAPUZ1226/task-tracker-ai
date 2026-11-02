@@ -161,10 +161,6 @@ export const CustomDeadlinePicker: React.FC<CustomDeadlinePickerProps> = ({ valu
 
   return (
     <div className="space-y-2 relative" ref={containerRef}>
-      <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300">
-        Дедлайн задачи
-      </label>
-
       {/* Main input trigger */}
       <div className="flex items-center gap-1.5">
         <div className="relative flex-1">
@@ -262,10 +258,10 @@ export const CustomDeadlinePicker: React.FC<CustomDeadlinePickerProps> = ({ valu
                   onClick={() => handleApplyDate(day)}
                   className={`h-7 w-7 mx-auto rounded-lg text-xs font-medium flex items-center justify-center transition-all ${
                     isSelected
-                      ? 'bg-emerald-600 text-white font-bold shadow-md shadow-emerald-500/20'
+                      ? 'bg-md-primary text-md-on-primary font-bold shadow-md'
                       : isToday
-                      ? 'border border-emerald-500 text-emerald-600 dark:text-emerald-400'
-                      : 'text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.08]'
+                      ? 'border border-md-primary text-md-primary font-semibold'
+                      : 'text-md-on-surface hover:bg-md-surface-container-high'
                   }`}
                 >
                   {day}
@@ -274,52 +270,52 @@ export const CustomDeadlinePicker: React.FC<CustomDeadlinePickerProps> = ({ valu
             })}
           </div>
 
-          {/* Custom Time Selector (No browser native selects) */}
-          <div className="pt-2.5 border-t border-zinc-200 dark:border-white/[0.08] space-y-2">
-            <div className="flex items-center justify-between text-xs text-zinc-700 dark:text-zinc-300">
-              <span className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400 font-medium">
-                <Clock className="w-3.5 h-3.5 text-emerald-500" /> Время:
+          {/* Custom Time Selector */}
+          <div className="pt-2.5 border-t border-md-outline-variant/20 space-y-2">
+            <div className="flex items-center justify-between text-xs text-md-on-surface">
+              <span className="flex items-center gap-1.5 text-md-on-surface-variant font-medium">
+                <Clock className="w-3.5 h-3.5 text-md-primary" /> Время:
               </span>
-              <div className="flex items-center gap-1.5 bg-zinc-100 dark:bg-[#121215] border border-zinc-200 dark:border-white/[0.08] rounded-xl p-1">
+              <div className="flex items-center gap-1.5 bg-md-surface-container border border-md-outline-variant/30 rounded-xl p-1">
                 {/* Hours stepper */}
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
                     onClick={() => setSelectedHours((h) => (h === 0 ? 23 : h - 1))}
-                    className="w-5 h-5 rounded flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-white/[0.08] text-xs font-bold"
+                    className="w-5 h-5 rounded flex items-center justify-center text-md-on-surface-variant hover:text-md-on-surface hover:bg-md-surface-container-high text-xs font-bold"
                   >
                     -
                   </button>
-                  <span className="w-6 text-center font-mono font-semibold text-xs text-zinc-900 dark:text-zinc-100">
+                  <span className="w-6 text-center font-mono font-semibold text-xs text-md-on-surface">
                     {String(selectedHours).padStart(2, '0')}
                   </span>
                   <button
                     type="button"
                     onClick={() => setSelectedHours((h) => (h === 23 ? 0 : h + 1))}
-                    className="w-5 h-5 rounded flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-white/[0.08] text-xs font-bold"
+                    className="w-5 h-5 rounded flex items-center justify-center text-md-on-surface-variant hover:text-md-on-surface hover:bg-md-surface-container-high text-xs font-bold"
                   >
                     +
                   </button>
                 </div>
 
-                <span className="text-zinc-400 font-bold">:</span>
+                <span className="text-md-on-surface-variant font-bold">:</span>
 
                 {/* Minutes stepper */}
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
                     onClick={() => setSelectedMinutes((m) => (m === 0 ? 45 : (m - 15 + 60) % 60))}
-                    className="w-5 h-5 rounded flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-white/[0.08] text-xs font-bold"
+                    className="w-5 h-5 rounded flex items-center justify-center text-md-on-surface-variant hover:text-md-on-surface hover:bg-md-surface-container-high text-xs font-bold"
                   >
                     -
                   </button>
-                  <span className="w-6 text-center font-mono font-semibold text-xs text-zinc-900 dark:text-zinc-100">
+                  <span className="w-6 text-center font-mono font-semibold text-xs text-md-on-surface">
                     {String(selectedMinutes).padStart(2, '0')}
                   </span>
                   <button
                     type="button"
                     onClick={() => setSelectedMinutes((m) => (m === 45 ? 0 : (m + 15) % 60))}
-                    className="w-5 h-5 rounded flex items-center justify-center text-zinc-500 hover:text-zinc-900 dark:hover:text-white hover:bg-zinc-200 dark:hover:bg-white/[0.08] text-xs font-bold"
+                    className="w-5 h-5 rounded flex items-center justify-center text-md-on-surface-variant hover:text-md-on-surface hover:bg-md-surface-container-high text-xs font-bold"
                   >
                     +
                   </button>
@@ -346,8 +342,8 @@ export const CustomDeadlinePicker: React.FC<CustomDeadlinePickerProps> = ({ valu
                     }}
                     className={`flex-1 py-1 rounded-lg text-[11px] font-mono transition-all ${
                       isActive
-                        ? 'bg-emerald-600 text-white font-bold shadow-xs'
-                        : 'bg-zinc-100 dark:bg-white/[0.04] text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-white/[0.08]'
+                        ? 'bg-md-primary text-md-on-primary font-bold shadow-xs'
+                        : 'bg-md-surface-container text-md-on-surface-variant hover:bg-md-surface-container-high'
                     }`}
                   >
                     {time.label}
@@ -362,7 +358,7 @@ export const CustomDeadlinePicker: React.FC<CustomDeadlinePickerProps> = ({ valu
             <button
               type="button"
               onClick={() => setIsOpen(false)}
-              className="text-[11px] text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+              className="text-[11px] text-md-on-surface-variant hover:text-md-on-surface"
             >
               Закрыть
             </button>
@@ -375,7 +371,7 @@ export const CustomDeadlinePicker: React.FC<CustomDeadlinePickerProps> = ({ valu
                   handleApplyDate(new Date().getDate());
                 }
               }}
-              className="flex items-center gap-1 text-[11px] font-medium px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition-all shadow-sm"
+              className="flex items-center gap-1 text-[11px] font-medium px-3.5 py-1.5 rounded-full bg-md-primary text-md-on-primary hover:shadow-md transition-all active:scale-95"
             >
               <Check className="w-3 h-3" /> Применить
             </button>

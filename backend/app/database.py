@@ -9,10 +9,12 @@ engine = create_engine(
 
 from sqlalchemy.engine import Engine
 
-# Enable foreign keys for SQLite
+# Enable foreign keys and Unicode-aware lower() for SQLite
 @event.listens_for(Engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
     if "sqlite" in type(dbapi_connection).__module__:
+        if hasattr(dbapi_connection, "create_function"):
+            dbapi_connection.create_function("lower", 1, lambda s: s.lower() if isinstance(s, str) else s)
         cursor = dbapi_connection.cursor()
         cursor.execute("PRAGMA foreign_keys=ON")
         cursor.close()

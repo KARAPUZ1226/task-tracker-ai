@@ -1,7 +1,7 @@
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
-from sqlalchemy import or_, case
+from sqlalchemy import or_, case, func
 from datetime import datetime, timezone
 
 from app.auth import get_current_user
@@ -104,7 +104,16 @@ def get_tasks(
         query = query.filter(Task.priority == priority_filter)
 
     if tag:
-        query = query.filter(Task.tags.ilike(f"%{tag.strip()}%"))
+        clean_tag = tag.strip().lower().lstrip("#")
+        tags_col = func.lower(Task.tags)
+        query = query.filter(
+            or_(
+                tags_col == clean_tag,
+                tags_col.like(f"{clean_tag},%"),
+                tags_col.like(f"%,{clean_tag}"),
+                tags_col.like(f"%,{clean_tag},%"),
+            )
+        )
 
     # Sorting
     if sort_by == "deadline":

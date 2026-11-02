@@ -250,55 +250,53 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
           <button
             type="button"
             onClick={() => onDelete(task.id)}
-            className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold text-rose-500 hover:bg-rose-500/10 transition-colors"
+            className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold text-rose-500 hover:bg-rose-500/10 transition-colors self-start sm:self-auto"
           >
             <Trash2 className="w-4 h-4" />
             <span>Удалить задачу</span>
           </button>
 
-          {/* Edit & Quick Status Progression */}
-          <div className="flex items-center justify-end gap-2">
+          {/* Status Switcher & Edit */}
+          <div className="flex flex-wrap items-center justify-end gap-2.5">
+            {/* 1-Tap Status Switcher */}
+            <div className="flex items-center bg-md-surface-container rounded-full p-1 border border-md-outline-variant/30">
+              {(
+                [
+                  { id: 'todo', label: 'К выполнению' },
+                  { id: 'in_progress', label: 'В работе' },
+                  { id: 'done', label: 'Готово' },
+                ] as const
+              ).map((st) => {
+                const isActive = task.status === st.id;
+                return (
+                  <button
+                    key={st.id}
+                    type="button"
+                    onClick={() => onStatusChange(task.id, st.id)}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold transition-all ${
+                      isActive
+                        ? st.id === 'done'
+                          ? 'bg-emerald-600 text-white shadow-xs'
+                          : st.id === 'in_progress'
+                          ? 'bg-amber-500 text-white shadow-xs'
+                          : 'bg-md-surface text-md-on-surface shadow-xs'
+                        : 'text-md-on-surface-variant hover:text-md-on-surface'
+                    }`}
+                  >
+                    {st.label}
+                  </button>
+                );
+              })}
+            </div>
+
             <button
               type="button"
               onClick={() => onEdit(task)}
               className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold bg-md-surface-container hover:bg-md-surface-container-high text-md-on-surface border border-md-outline-variant/30 transition-all active:scale-95"
             >
-              <Edit2 className="w-3.5 h-3.5" />
+              <Edit2 className="w-3.5 h-3.5 text-md-primary" />
               <span>Редактировать</span>
             </button>
-
-            {task.status === 'todo' && (
-              <button
-                type="button"
-                onClick={() => onStatusChange(task.id, 'in_progress')}
-                className="flex items-center gap-1.5 px-5 py-2 rounded-full text-xs font-bold bg-amber-500 text-white hover:bg-amber-600 transition-all active:scale-95 shadow-xs"
-              >
-                <span>В работу</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            )}
-
-            {task.status === 'in_progress' && (
-              <button
-                type="button"
-                onClick={() => onStatusChange(task.id, 'done')}
-                className="flex items-center gap-1.5 px-5 py-2 rounded-full text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-all active:scale-95 shadow-xs"
-              >
-                <Check className="w-3.5 h-3.5" />
-                <span>Завершить</span>
-              </button>
-            )}
-
-            {task.status === 'done' && (
-              <button
-                type="button"
-                onClick={() => onStatusChange(task.id, 'todo')}
-                className="flex items-center gap-1.5 px-5 py-2 rounded-full text-xs font-bold bg-md-primary-container text-md-on-primary-container hover:shadow-xs transition-all active:scale-95"
-              >
-                <RotateCcw className="w-3.5 h-3.5" />
-                <span>Вернуть</span>
-              </button>
-            )}
           </div>
         </div>
       </div>

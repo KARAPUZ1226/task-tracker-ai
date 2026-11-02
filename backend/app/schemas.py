@@ -66,9 +66,11 @@ class TaskBase(BaseModel):
     @classmethod
     def parse_tags_base(cls, v):
         if isinstance(v, str):
-            return [t.strip() for t in v.split(",") if t.strip()]
+            tags = [t.strip().lstrip("#") for t in v.split(",") if t.strip().lstrip("#")]
+            return list(dict.fromkeys(tags))
         if isinstance(v, list):
-            return [str(t).strip() for t in v if str(t).strip()]
+            tags = [str(t).strip().lstrip("#") for t in v if str(t).strip().lstrip("#")]
+            return list(dict.fromkeys(tags))
         return []
 
 class TaskCreate(TaskBase):
@@ -100,9 +102,11 @@ class TaskUpdate(BaseModel):
         if v is None:
             return None
         if isinstance(v, str):
-            return [t.strip() for t in v.split(",") if t.strip()]
+            tags = [t.strip().lstrip("#") for t in v.split(",") if t.strip().lstrip("#")]
+            return list(dict.fromkeys(tags))
         if isinstance(v, list):
-            return [str(t).strip() for t in v if str(t).strip()]
+            tags = [str(t).strip().lstrip("#") for t in v if str(t).strip().lstrip("#")]
+            return list(dict.fromkeys(tags))
         return []
 
 class TaskOut(TaskBase):

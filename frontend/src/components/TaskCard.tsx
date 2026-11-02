@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Task, Status, Priority } from '../types';
 import { SubtaskChecklist } from './SubtaskChecklist';
 import {
@@ -41,6 +41,13 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    const handleOutside = () => setMenuOpen(false);
+    document.addEventListener('click', handleOutside);
+    return () => document.removeEventListener('click', handleOutside);
+  }, [menuOpen]);
 
   const priorityConfig: Record<Priority, { label: string; dot: string; badge: string }> = {
     urgent: {

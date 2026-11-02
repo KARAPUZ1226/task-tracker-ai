@@ -56,13 +56,20 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
     },
   ];
 
+  const visibleColumns = activeColumn === 'all'
+    ? columns
+    : columns.filter((col) => col.id === activeColumn);
+
   const getTasksForColumn = (status: Status) => tasks.filter((t) => t.status === status);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start pb-24">
-      {columns.map((col) => {
+    <div
+      className={`grid ${
+        activeColumn === 'all' ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 max-w-2xl mx-auto'
+      } gap-6 items-start pb-24`}
+    >
+      {visibleColumns.map((col) => {
         const colTasks = getTasksForColumn(col.id);
-        const isHiddenOnMobile = activeColumn !== 'all' && activeColumn !== col.id;
         const isDropActive = dragOverColumn === col.id;
 
         return (
@@ -92,7 +99,7 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
               isDropActive
                 ? 'border-md-primary bg-md-primary-container/20 shadow-md scale-[1.01]'
                 : col.color
-            } ${isHiddenOnMobile ? 'hidden md:flex' : 'flex animate-fade-in'}`}
+            } animate-fade-in`}
           >
             {/* Column Header */}
             <div className="flex items-center justify-between pb-3 mb-4 border-b border-md-outline-variant/15">

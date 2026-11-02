@@ -216,7 +216,13 @@ export const App: React.FC = () => {
   const handleTogglePin = async (id: number) => {
     try {
       const updated = await api.togglePin(id);
-      setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
+      setTasks((prev) => {
+        const next = prev.map((t) => (t.id === id ? updated : t));
+        return [...next].sort((a, b) => {
+          if (Boolean(a.is_pinned) === Boolean(b.is_pinned)) return 0;
+          return a.is_pinned ? -1 : 1;
+        });
+      });
       if (taskToView && taskToView.id === id) {
         setTaskToView(updated);
       }
@@ -347,11 +353,20 @@ export const App: React.FC = () => {
     );
   }
 
-  const columnCounts = {
-    todo: tasks.filter((t) => t.status === 'todo').length,
-    in_progress: tasks.filter((t) => t.status === 'in_progress').length,
-    done: tasks.filter((t) => t.status === 'done').length,
-  };
+  const columnCounts = useMemo(() => {
+    if (stats && !debouncedSearch && !selectedTag && priorityFilter === 'all') {
+      return {
+        todo: stats.todo_tasks,
+        in_progress: stats.in_progress_tasks,
+        done: stats.done_tasks,
+      };
+    }
+    return {
+      todo: tasks.filter((t) => t.status === 'todo').length,
+      in_progress: tasks.filter((t) => t.status === 'in_progress').length,
+      done: tasks.filter((t) => t.status === 'done').length,
+    };
+  }, [stats, debouncedSearch, selectedTag, priorityFilter, tasks]);
 
   return (
     <div className="min-h-screen flex flex-col bg-md-surface text-md-on-surface transition-colors duration-300">
@@ -432,6 +447,9 @@ export const App: React.FC = () => {
             onDeleteTask={handleDeleteTask}
             onStatusChange={handleStatusChange}
             onTogglePin={handleTogglePin}
+            onToggleSubtask={handleToggleSubtask}
+            onAddSubtask={handleAddSubtask}
+            onDeleteSubtask={handleDeleteSubtask}
             onOpenCreate={() => {
               setTaskToEdit(null);
               setInitialStatus('todo');

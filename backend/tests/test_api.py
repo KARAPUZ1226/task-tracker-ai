@@ -474,4 +474,62 @@ def test_smart_assist_endpoint(client):
     assert "Финансы" in data["suggested_tags"] or len(data["suggested_tags"]) > 0
     assert data["is_fallback"] is True
 
+def test_exact_tag_filtering_and_pin_sorting(client):
+    reg = client.post("/api/auth/register", json={
+        "email": "user_tag_test@example.com",
+        "password": "password_tags"
+    })
+    token = reg.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Task 1: has tag "Security", should NOT match tag filter "IT"
+    t1 = client.post("/api/tasks", headers=headers, json={
+        "title": "Security Audit",
+        "priority": "high",
+        "tags": ["Security", "DevOps"],
+        "is_pinned": False,
+    }).json()
+
+    # Task 2: has tag "IT", should match tag filter "IT"
+    t2 = client.post("/api/tasks", headers=headers, json={
+        "title": "IT Equipment",
+        "priority": "low",
+        "tags": ["IT", "Office"],
+        "is_pinned": True,
+    }).json()
+
+    # Task 3: Cyrillic tag "Дом", should match case-insensitively "дом"
+    t3 = client.post("/api/tasks", headers=headers, json={
+        "title": "Купить диван",
+        "priority": "medium",
+        "tags": ["Дом"],
+    }).json()
+
+    # Task 4: Cyrillic tag "Уведомление", should NOT match tag filter "дом"
+    t4 = client.post("/api/tasks", headers=headers, json={
+        "title": "Настройка пушей",
+        "priority": "low",
+        "tags": ["Уведомление"],
+    }).json()
+
+    # Query tag=IT: must return ONLY Task 2, NOT Task 1 (Security)
+    res_it = client.get("/api/tasks?tag=IT", headers=headers).json()
+    assert len(res_it) == 1
+    assert res_it[0]["id"] == t2["id"]
+
+    # Query tag=дом: must return Task 3, NOT Task 4 (Уведомление)
+    res_dom = client.get("/api/tasks?tag=дом", headers=headers).json()
+    assert len(res_dom) == 1
+    assert res_dom[0]["id"] == t3["id"]
+
+    # Cyrillic case-insensitive search
+    res_search = client.get("/api/tasks?search=диван", headers=headers).json()
+    assert len(res_search) == 1
+    assert res_search[0]["id"] == t3["id"]
+
+    # Verify pin sort: t2 is pinned, so it must be first in default list
+    all_tasks = client.get("/api/tasks", headers=headers).json()
+    assert all_tasks[0]["id"] == t2["id"]
+    assert all_tasks[0]["is_pinned"] is True
+
 

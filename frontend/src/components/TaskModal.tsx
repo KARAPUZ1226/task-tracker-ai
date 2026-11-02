@@ -20,6 +20,7 @@ import {
   GripVertical,
   Pin,
   Tag,
+  Edit2,
 } from 'lucide-react';
 
 interface TaskModalProps {
@@ -224,6 +225,21 @@ export const TaskModal: React.FC<TaskModalProps> = ({
     setSubtasks(subtasks.filter((_, i) => i !== idx));
   };
 
+  const handleStartEditSubtask = (idx: number) => {
+    setEditingSubtaskIdx(idx);
+    setEditingSubtaskValue(subtasks[idx]);
+  };
+
+  const handleSaveSubtaskEdit = (idx: number) => {
+    const clean = editingSubtaskValue.trim();
+    if (clean) {
+      const updated = [...subtasks];
+      updated[idx] = clean;
+      setSubtasks(updated);
+    }
+    setEditingSubtaskIdx(null);
+  };
+
   // Tag management
   const toggleTag = (tag: string) => {
     if (tags.includes(tag)) {
@@ -234,9 +250,12 @@ export const TaskModal: React.FC<TaskModalProps> = ({
   };
 
   const handleAddCustomTag = () => {
-    const clean = customTagInput.trim().replace(/^#/, '');
-    if (clean && !tags.includes(clean)) {
-      setTags([...tags, clean]);
+    const raw = customTagInput.trim();
+    if (!raw) return;
+    const parts = raw.split(',').map((t) => t.trim().replace(/^#/, '')).filter(Boolean);
+    if (parts.length > 0) {
+      const merged = Array.from(new Set([...tags, ...parts]));
+      setTags(merged);
       setCustomTagInput('');
     }
   };
@@ -575,14 +594,68 @@ export const TaskModal: React.FC<TaskModalProps> = ({
             {subtasks.map((st, idx) => (
               <div
                 key={idx}
-                className="flex items-center gap-2 p-2 rounded-xl bg-md-surface-container border border-md-outline-variant/20 text-xs text-md-on-surface group"
+                draggable
+                onDragStart={() => setDraggedSubtaskIdx(idx)}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  if (dragOverSubtaskIdx !== idx) setDragOverSubtaskIdx(idx);
+                }}
+                onDragLeave={() => setDragOverSubtaskIdx(null)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (draggedSubtaskIdx === null || draggedSubtaskIdx === idx) return;
+                  const updated = [...subtasks];
+                  const [removed] = updated.splice(draggedSubtaskIdx, 1);
+                  updated.splice(idx, 0, removed);
+                  setSubtasks(updated);
+                  setDraggedSubtaskIdx(null);
+                  setDragOverSubtaskIdx(null);
+                }}
+                className={`flex items-center gap-2 p-2 rounded-xl bg-md-surface-container border ${
+                  dragOverSubtaskIdx === idx
+                    ? 'border-md-primary bg-md-primary-container/20'
+                    : 'border-md-outline-variant/20'
+                } text-xs text-md-on-surface group cursor-grab active:cursor-grabbing transition-all`}
               >
                 <GripVertical className="w-3.5 h-3.5 text-md-on-surface-variant/40 shrink-0" />
-                <span className="flex-1 truncate">{st}</span>
+                {editingSubtaskIdx === idx ? (
+                  <input
+                    type="text"
+                    value={editingSubtaskValue}
+                    onChange={(e) => setEditingSubtaskValue(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleSaveSubtaskEdit(idx);
+                      } else if (e.key === 'Escape') {
+                        setEditingSubtaskIdx(null);
+                      }
+                    }}
+                    onBlur={() => handleSaveSubtaskEdit(idx)}
+                    autoFocus
+                    className="flex-1 bg-md-surface border border-md-primary rounded-lg px-2 py-0.5 text-xs text-md-on-surface outline-none"
+                  />
+                ) : (
+                  <span
+                    onDoubleClick={() => handleStartEditSubtask(idx)}
+                    className="flex-1 truncate cursor-pointer select-none"
+                    title="Двойной клик для редактирования"
+                  >
+                    {st}
+                  </span>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleStartEditSubtask(idx)}
+                  className="p-1 rounded-full text-md-on-surface-variant/60 hover:text-md-on-surface opacity-0 group-hover:opacity-100 transition-opacity"
+                  title="Переименовать шаг"
+                >
+                  <Edit2 className="w-3 h-3" />
+                </button>
                 <button
                   type="button"
                   onClick={() => handleRemoveSubtask(idx)}
-                  className="p-1 rounded-full text-md-on-surface-variant hover:text-rose-500 opacity-60 hover:opacity-100 transition-opacity"
+                  className="p-1 rounded-full text-md-on-surface-variant/60 hover:text-rose-500 opacity-60 hover:opacity-100 transition-opacity"
                   title="Удалить подзадачу"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
