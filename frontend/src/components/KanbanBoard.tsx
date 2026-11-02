@@ -9,20 +9,22 @@ interface KanbanBoardProps {
   onEditTask: (task: Task) => void;
   onDeleteTask: (id: number) => void;
   onStatusChange: (id: number, status: Status) => void;
+  onTogglePin?: (id: number) => void;
   onToggleSubtask: (taskId: number, subtaskId: number, currentStatus: boolean) => void;
   onAddSubtask: (taskId: number, title: string) => void;
   onDeleteSubtask: (taskId: number, subtaskId: number) => void;
   onOpenCreateWithStatus: (status: Status) => void;
-  activeColumn?: Status;
+  activeColumn?: Status | 'all';
 }
 
 export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   tasks,
-  activeColumn = 'todo',
+  activeColumn = 'all',
   onViewTask,
   onEditTask,
   onDeleteTask,
   onStatusChange,
+  onTogglePin,
   onToggleSubtask,
   onAddSubtask,
   onDeleteSubtask,
@@ -35,21 +37,21 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
       id: 'todo',
       title: 'К выполнению',
       icon: <Circle className="w-4 h-4 text-zinc-400" />,
-      color: 'border-zinc-200 dark:border-zinc-800/80',
-      badge: 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300',
+      color: 'border-md-outline-variant/30',
+      badge: 'bg-md-surface-container-high text-md-on-surface',
     },
     {
       id: 'in_progress',
       title: 'В работе',
-      icon: <Clock className="w-4 h-4 text-amber-500 animate-spin-slow" />,
-      color: 'border-amber-500/20',
+      icon: <Clock className="w-4 h-4 text-amber-500" />,
+      color: 'border-amber-500/30',
       badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
     },
     {
       id: 'done',
       title: 'Готово',
       icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" />,
-      color: 'border-emerald-500/20',
+      color: 'border-emerald-500/30',
       badge: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400',
     },
   ];
@@ -57,97 +59,98 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const getTasksForColumn = (status: Status) => tasks.filter((t) => t.status === status);
 
   return (
-    <div className="space-y-4">
-      {/* Grid columns */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start pb-56 sm:pb-64">
-        {columns.map((col) => {
-          const colTasks = getTasksForColumn(col.id);
-          const isHiddenOnMobile = activeColumn !== col.id;
-          const isDropActive = dragOverColumn === col.id;
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start pb-24">
+      {columns.map((col) => {
+        const colTasks = getTasksForColumn(col.id);
+        const isHiddenOnMobile = activeColumn !== 'all' && activeColumn !== col.id;
+        const isDropActive = dragOverColumn === col.id;
 
-          return (
-            <div
-              key={col.id}
-              id={`column-${col.id}`}
-              onDragOver={(e) => {
-                e.preventDefault();
-                e.dataTransfer.dropEffect = 'move';
-                if (dragOverColumn !== col.id) setDragOverColumn(col.id);
-              }}
-              onDragLeave={(e) => {
-                if (!e.currentTarget.contains(e.relatedTarget as Node)) {
-                  setDragOverColumn(null);
-                }
-              }}
-              onDrop={(e) => {
-                e.preventDefault();
+        return (
+          <div
+            key={col.id}
+            id={`column-${col.id}`}
+            onDragOver={(e) => {
+              e.preventDefault();
+              e.dataTransfer.dropEffect = 'move';
+              if (dragOverColumn !== col.id) setDragOverColumn(col.id);
+            }}
+            onDragLeave={(e) => {
+              if (!e.currentTarget.contains(e.relatedTarget as Node)) {
                 setDragOverColumn(null);
-                const rawId = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('taskId');
-                const droppedTaskId = Number(rawId);
-                if (droppedTaskId) {
-                  onStatusChange(droppedTaskId, col.id);
-                }
-              }}
-              className={`flex flex-col rounded-2xl bg-zinc-50/50 dark:bg-[#0e1015] border p-4 min-h-[500px] min-w-0 transition-all duration-300 ${
-                isDropActive
-                  ? 'border-emerald-500 bg-emerald-500/5 shadow-lg shadow-emerald-500/10 scale-[1.01]'
-                  : col.color
-              } ${isHiddenOnMobile ? 'hidden md:flex' : 'flex animate-fade-in'}`}
-            >
-              {/* Column Header */}
-              <div className="flex items-center justify-between pb-3 mb-3 border-b border-zinc-200 dark:border-white/[0.06]">
-                <div className="flex items-center gap-2 min-w-0">
-                  {col.icon}
-                  <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-zinc-700 dark:text-zinc-200 truncate">
-                    {col.title}
-                  </h3>
-                  <span className={`text-xs font-bold px-2 py-0.5 rounded-full shrink-0 transition-transform ${col.badge}`}>
-                    {colTasks.length}
-                  </span>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => onOpenCreateWithStatus(col.id)}
-                  className="p-1 rounded-lg text-zinc-400 hover:text-emerald-500 dark:hover:text-emerald-400 hover:bg-zinc-100 dark:hover:bg-white/[0.06] active:scale-90 hover:scale-110 transition-all shrink-0"
-                  title="Добавить в эту колонку"
-                >
-                  <Plus className="w-4 h-4" />
-                </button>
+              }
+            }}
+            onDrop={(e) => {
+              e.preventDefault();
+              setDragOverColumn(null);
+              const rawId = e.dataTransfer.getData('text/plain') || e.dataTransfer.getData('taskId');
+              const droppedTaskId = Number(rawId);
+              if (droppedTaskId) {
+                onStatusChange(droppedTaskId, col.id);
+              }
+            }}
+            className={`flex flex-col rounded-3xl bg-md-surface-container-lowest border p-4 sm:p-5 min-h-[500px] min-w-0 transition-all duration-300 ${
+              isDropActive
+                ? 'border-md-primary bg-md-primary-container/20 shadow-md scale-[1.01]'
+                : col.color
+            } ${isHiddenOnMobile ? 'hidden md:flex' : 'flex animate-fade-in'}`}
+          >
+            {/* Column Header */}
+            <div className="flex items-center justify-between pb-3 mb-4 border-b border-md-outline-variant/15">
+              <div className="flex items-center gap-2.5 min-w-0">
+                {col.icon}
+                <h2 className="font-semibold text-sm sm:text-base text-md-on-surface tracking-tight truncate">
+                  {col.title}
+                </h2>
+                <span className={`px-2 py-0.5 rounded-full text-xs font-bold shrink-0 ${col.badge}`}>
+                  {colTasks.length}
+                </span>
               </div>
 
-              {/* Task list in column */}
-              <div className="space-y-3 flex-1 min-w-0 w-full">
-                {colTasks.length > 0 ? (
-                  colTasks.map((task) => (
-                    <TaskCard
-                      key={task.id}
-                      task={task}
-                      onView={onViewTask}
-                      onEdit={onEditTask}
-                      onDelete={onDeleteTask}
-                      onStatusChange={onStatusChange}
-                      onToggleSubtask={onToggleSubtask}
-                      onAddSubtask={onAddSubtask}
-                      onDeleteSubtask={onDeleteSubtask}
-                    />
-                  ))
-                ) : (
-                  <div className="h-40 flex flex-col items-center justify-center rounded-xl border border-dashed border-zinc-200 dark:border-white/[0.08] text-center p-4">
-                    <p className="text-xs text-zinc-400 dark:text-zinc-500">Нет задач в этой колонке</p>
-                    <button
-                      type="button"
-                      onClick={() => onOpenCreateWithStatus(col.id)}
-                      className="mt-2 text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 font-medium active:scale-95 hover:scale-105 transition-all"
-                    >
-                      <Plus className="w-3 h-3" /> Создать первую
-                    </button>
-                  </div>
-                )}
-              </div>
+              {/* Quick Add Button to Column */}
+              <button
+                type="button"
+                onClick={() => onOpenCreateWithStatus(col.id)}
+                className="p-1.5 rounded-full text-md-on-surface-variant hover:text-md-on-surface hover:bg-md-surface-container transition-colors"
+                title={`Добавить задачу в «${col.title}»`}
+                aria-label={`Добавить задачу в ${col.title}`}
+              >
+                <Plus className="w-4 h-4" />
+              </button>
             </div>
-          );
-        })}
-      </div>
+
+            {/* Task Cards List */}
+            <div className="space-y-3.5 flex-1 min-h-[100px]">
+              {colTasks.length === 0 ? (
+                <div className="h-44 flex flex-col items-center justify-center border-2 border-dashed border-md-outline-variant/20 rounded-2xl text-center p-4 text-xs text-md-on-surface-variant/60">
+                  <p>Нет задач в этой колонке</p>
+                  <button
+                    type="button"
+                    onClick={() => onOpenCreateWithStatus(col.id)}
+                    className="mt-2 text-xs font-medium text-md-primary hover:underline"
+                  >
+                    + Добавить задачу
+                  </button>
+                </div>
+              ) : (
+                colTasks.map((task) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onView={onViewTask}
+                    onEdit={onEditTask}
+                    onDelete={onDeleteTask}
+                    onStatusChange={onStatusChange}
+                    onTogglePin={onTogglePin}
+                    onToggleSubtask={onToggleSubtask}
+                    onAddSubtask={onAddSubtask}
+                    onDeleteSubtask={onDeleteSubtask}
+                  />
+                ))
+              )}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 };

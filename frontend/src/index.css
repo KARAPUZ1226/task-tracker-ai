@@ -2,26 +2,76 @@
 @tailwind components;
 @tailwind utilities;
 
+:root {
+  /* Material You (M3) Dynamic Palette - Light */
+  --md-sys-color-primary: #006874;
+  --md-sys-color-on-primary: #ffffff;
+  --md-sys-color-primary-container: #9eeffd;
+  --md-sys-color-on-primary-container: #001f24;
+
+  --md-sys-color-secondary: #4a6267;
+  --md-sys-color-on-secondary: #ffffff;
+  --md-sys-color-secondary-container: #cde7ec;
+  --md-sys-color-on-secondary-container: #051f23;
+
+  --md-sys-color-tertiary: #525e7d;
+  --md-sys-color-tertiary-container: #dae2ff;
+  --md-sys-color-on-tertiary-container: #0e1b37;
+
+  --md-sys-color-surface: #f4f7f8;
+  --md-sys-color-surface-container-lowest: #ffffff;
+  --md-sys-color-surface-container-low: #edf1f3;
+  --md-sys-color-surface-container: #e6ebed;
+  --md-sys-color-surface-container-high: #e0e5e8;
+  --md-sys-color-surface-container-highest: #d9dfe2;
+
+  --md-sys-color-on-surface: #171d1e;
+  --md-sys-color-on-surface-variant: #3f484a;
+  --md-sys-color-outline: #6f797a;
+  --md-sys-color-outline-variant: #bfc8ca;
+}
+
+html.dark {
+  /* Material You (M3) Dynamic Palette - Dark */
+  --md-sys-color-primary: #82d3e0;
+  --md-sys-color-on-primary: #00363d;
+  --md-sys-color-primary-container: #004f58;
+  --md-sys-color-on-primary-container: #9eeffd;
+
+  --md-sys-color-secondary: #b1cbd0;
+  --md-sys-color-on-secondary: #1c3438;
+  --md-sys-color-secondary-container: #334b4f;
+  --md-sys-color-on-secondary-container: #cde7ec;
+
+  --md-sys-color-tertiary: #b9c6ea;
+  --md-sys-color-tertiary-container: #3b4664;
+  --md-sys-color-on-tertiary-container: #dae2ff;
+
+  --md-sys-color-surface: #0e1415;
+  --md-sys-color-surface-container-lowest: #090f10;
+  --md-sys-color-surface-container-low: #161d1e;
+  --md-sys-color-surface-container: #1a2122;
+  --md-sys-color-surface-container-high: #242b2d;
+  --md-sys-color-surface-container-highest: #2f3638;
+
+  --md-sys-color-on-surface: #deedea;
+  --md-sys-color-on-surface-variant: #bfc8ca;
+  --md-sys-color-outline: #899294;
+  --md-sys-color-outline-variant: #3f484a;
+}
+
 @layer base {
   body, button, input, textarea, a, select {
     transition-property: background-color, border-color, color, fill, stroke, transform, box-shadow;
-    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-    transition-duration: 200ms;
+    transition-timing-function: cubic-bezier(0.2, 0, 0, 1);
+    transition-duration: 250ms;
   }
 
   body {
     @apply antialiased;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  }
-
-  html.dark body {
-    background-color: #090a0f;
-    color: #f8fafc;
-  }
-
-  html.light body {
-    background-color: #f8fafc;
-    color: #0f172a;
+    background-color: var(--md-sys-color-surface);
+    color: var(--md-sys-color-on-surface);
   }
 }
 

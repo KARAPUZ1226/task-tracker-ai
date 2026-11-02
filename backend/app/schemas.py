@@ -51,6 +51,8 @@ class TaskBase(BaseModel):
     description: Optional[str] = None
     priority: PriorityType = "medium"
     deadline: Optional[datetime] = None
+    tags: List[str] = Field(default_factory=list)
+    is_pinned: bool = False
 
     @field_validator("title")
     @classmethod
@@ -59,6 +61,15 @@ class TaskBase(BaseModel):
         if not clean:
             raise ValueError("Название задачи не может быть пустым")
         return clean
+
+    @field_validator("tags", mode="before")
+    @classmethod
+    def parse_tags_base(cls, v):
+        if isinstance(v, str):
+            return [t.strip() for t in v.split(",") if t.strip()]
+        if isinstance(v, list):
+            return [str(t).strip() for t in v if str(t).strip()]
+        return []
 
 class TaskCreate(TaskBase):
     subtasks: Optional[List[str]] = Field(default_factory=list, description="Optional initial subtask titles")
@@ -69,6 +80,8 @@ class TaskUpdate(BaseModel):
     priority: Optional[PriorityType] = None
     status: Optional[StatusType] = None
     deadline: Optional[datetime] = None
+    tags: Optional[List[str]] = None
+    is_pinned: Optional[bool] = None
     subtasks: Optional[List[str]] = Field(None, description="Optional subtasks to sync or add")
 
     @field_validator("title")
@@ -81,6 +94,17 @@ class TaskUpdate(BaseModel):
             return clean
         return v
 
+    @field_validator("tags", mode="before")
+    @classmethod
+    def parse_tags_update(cls, v):
+        if v is None:
+            return None
+        if isinstance(v, str):
+            return [t.strip() for t in v.split(",") if t.strip()]
+        if isinstance(v, list):
+            return [str(t).strip() for t in v if str(t).strip()]
+        return []
+
 class TaskOut(TaskBase):
     id: int
     user_id: int
@@ -89,6 +113,16 @@ class TaskOut(TaskBase):
     updated_at: datetime
     subtasks: List[SubtaskOut] = []
     model_config = ConfigDict(from_attributes=True)
+
+class TaskStatsOut(BaseModel):
+    total_tasks: int
+    todo_tasks: int
+    in_progress_tasks: int
+    done_tasks: int
+    overdue_tasks: int
+    completion_rate: float
+    total_subtasks: int
+    completed_subtasks: int
 
 # AI Schemas
 class AIDecomposeRequest(BaseModel):
@@ -130,5 +164,19 @@ class AIPrioritizeRequest(BaseModel):
 
 class AIPrioritizeResponse(BaseModel):
     suggested_priority: PriorityType
+    reasoning: str
+    is_fallback: bool = False
+
+class AISmartAssistRequest(BaseModel):
+    title: str = Field(..., min_length=2, max_length=255)
+    context: Optional[str] = None
+    api_key: Optional[str] = None
+
+class AISmartAssistResponse(BaseModel):
+    description: str
+    subtasks: List[str]
+    suggested_priority: PriorityType
+    suggested_deadline: Optional[datetime] = None
+    suggested_tags: List[str] = []
     reasoning: str
     is_fallback: bool = False

@@ -17,21 +17,27 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
     setApiKey(keyInput.trim());
-    toast.success(keyInput.trim() ? 'AI API ключ сохранен локально' : 'Ключ сброшен (используется встроенный умный генератор)');
+    toast.success(
+      keyInput.trim()
+        ? 'AI API ключ сохранен'
+        : 'Ключ сброшен (активирован встроенный семантический генератор)'
+    );
     onClose();
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
-      <div className="w-full max-w-md bg-white dark:bg-[#12141a] border border-zinc-200 dark:border-white/[0.1] rounded-2xl shadow-2xl overflow-hidden p-6 space-y-5">
-        <div className="flex items-center justify-between pb-3 border-b border-zinc-200 dark:border-white/[0.08]">
-          <div className="flex items-center gap-2">
-            <Key className="w-5 h-5 text-emerald-500" />
-            <h3 className="text-base font-semibold text-zinc-900 dark:text-white">Настройки AI</h3>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in">
+      <div className="w-full max-w-md bg-md-surface-container-low border border-md-outline-variant/30 rounded-[28px] shadow-2xl p-6 space-y-5 animate-pop-in">
+        <div className="flex items-center justify-between pb-3 border-b border-md-outline-variant/15">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-md-primary-container text-md-on-primary-container flex items-center justify-center shadow-xs">
+              <Key className="w-4 h-4" />
+            </div>
+            <h3 className="text-base font-bold text-md-on-surface">Настройки AI-интеграции</h3>
           </div>
           <button
             onClick={onClose}
-            className="text-zinc-400 hover:text-zinc-600 dark:hover:text-white p-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
+            className="p-1.5 rounded-full text-md-on-surface-variant hover:text-md-on-surface hover:bg-md-surface-container transition-colors"
           >
             <X className="w-5 h-5" />
           </button>
@@ -39,39 +45,40 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
 
         <form onSubmit={handleSave} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">
-              Google Gemini / OpenAI API Key (опционально)
+            <label className="block text-xs font-semibold text-md-on-surface-variant mb-1.5">
+              Google Gemini или OpenAI API Key (опционально)
             </label>
             <input
               type="password"
               value={keyInput}
               onChange={(e) => setKeyInput(e.target.value)}
               placeholder="AIza... или sk-..."
-              className="w-full bg-zinc-100 dark:bg-[#18181c] border border-zinc-300 dark:border-white/[0.08] focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-xs text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 outline-none transition-all font-mono"
+              className="w-full bg-md-surface-container rounded-2xl border border-md-outline-variant/30 px-4 py-3 text-xs text-md-on-surface placeholder:text-md-on-surface-variant/50 outline-none focus:ring-2 focus:ring-md-primary/40 focus:border-md-primary transition-all font-mono"
             />
           </div>
 
-          <div className="p-3 rounded-xl bg-zinc-50 dark:bg-white/[0.03] border border-zinc-200 dark:border-white/[0.06] space-y-2 text-xs text-zinc-600 dark:text-zinc-400 leading-relaxed">
-            <div className="flex items-center gap-1.5 font-medium text-zinc-800 dark:text-zinc-300">
-              <Sparkles className="w-4 h-4 text-emerald-500" />
-              <span>Умный режим без внешнего ключа:</span>
+          <div className="p-3.5 rounded-2xl bg-md-surface-container border border-md-outline-variant/20 space-y-2 text-xs text-md-on-surface-variant leading-relaxed">
+            <div className="flex items-center gap-2 font-bold text-md-on-surface">
+              <Sparkles className="w-4 h-4 text-md-primary" />
+              <span>Умный режим без внешнего ключа</span>
             </div>
             <p>
-              Если поле оставить пустым, сервис автоматически использует встроенный семантический генератор контекстной декомпозиции и расчета сроков.
+              Если поле оставить пустым, система использует встроенные семантические эвристики и шаблоны
+              для декомпозиции, оценки сроков, описания и тегов без задержек и лимитов.
             </p>
           </div>
 
-          <div className="flex items-center justify-end gap-3 pt-2">
+          <div className="flex items-center justify-end gap-2.5 pt-2 border-t border-md-outline-variant/15">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 text-xs font-medium text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white rounded-xl hover:bg-zinc-100 dark:hover:bg-white/[0.04]"
+              className="px-5 py-2.5 text-xs font-semibold text-md-on-surface-variant hover:bg-md-surface-container rounded-full transition-colors"
             >
               Отмена
             </button>
             <button
               type="submit"
-              className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-500/20"
+              className="flex items-center gap-1.5 px-6 py-2.5 text-xs font-bold rounded-full bg-md-primary text-md-on-primary hover:shadow-md active:scale-95 transition-all"
             >
               <Check className="w-3.5 h-3.5" />
               <span>Сохранить</span>

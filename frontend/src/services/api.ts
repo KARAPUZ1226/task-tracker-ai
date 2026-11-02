@@ -5,10 +5,12 @@ import {
   TaskCreatePayload,
   TaskUpdatePayload,
   Subtask,
+  TaskStats,
   AIDecomposeResponse,
   AIDescriptionResponse,
   AIDeadlineResponse,
   AIPrioritizeResponse,
+  AISmartAssistResponse,
   Priority,
   Status
 } from '../types';
@@ -79,13 +81,31 @@ export const api = {
   },
 
   // Tasks
-  async getTasks(params?: { search?: string; status?: Status; priority?: Priority }): Promise<Task[]> {
+  async getTasks(params?: { search?: string; status?: Status; priority?: Priority; tag?: string; sort_by?: string }): Promise<Task[]> {
     const query = new URLSearchParams();
     if (params?.search) query.append('search', params.search);
     if (params?.status) query.append('status', params.status);
     if (params?.priority) query.append('priority', params.priority);
+    if (params?.tag) query.append('tag', params.tag);
+    if (params?.sort_by) query.append('sort_by', params.sort_by);
     const qs = query.toString() ? `?${query.toString()}` : '';
     return request<Task[]>(`/tasks${qs}`);
+  },
+
+  async getStats(): Promise<TaskStats> {
+    return request<TaskStats>('/tasks/stats');
+  },
+
+  async togglePin(id: number): Promise<Task> {
+    return request<Task>(`/tasks/${id}/pin`, {
+      method: 'POST',
+    });
+  },
+
+  async clearCompleted(): Promise<{ deleted_count: number }> {
+    return request<{ deleted_count: number }>('/tasks/clear-completed', {
+      method: 'POST',
+    });
   },
 
   async createTask(payload: TaskCreatePayload): Promise<Task> {
@@ -134,6 +154,13 @@ export const api = {
   },
 
   // AI features
+  async aiSmartAssist(title: string, context?: string, apiKey?: string): Promise<AISmartAssistResponse> {
+    return request<AISmartAssistResponse>('/ai/smart-assist', {
+      method: 'POST',
+      body: JSON.stringify({ title, context, api_key: apiKey || undefined }),
+    });
+  },
+
   async aiDecompose(title: string, description?: string, apiKey?: string): Promise<AIDecomposeResponse> {
     return request<AIDecomposeResponse>('/ai/decompose', {
       method: 'POST',

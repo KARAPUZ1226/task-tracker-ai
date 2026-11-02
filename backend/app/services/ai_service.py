@@ -11,6 +11,7 @@ from app.schemas import (
     AIDescriptionResponse,
     AIDeadlineResponse,
     AIPrioritizeResponse,
+    AISmartAssistResponse,
     PriorityType,
 )
 
@@ -790,4 +791,85 @@ class AIService:
             suggested_priority=res["suggested_priority"],
             reasoning=res["reasoning"],
             is_fallback=True
+        )
+
+    @staticmethod
+    async def smart_assist(title: str, context: Optional[str] = None, api_key: Optional[str] = None) -> AISmartAssistResponse:
+        system_prompt = (
+            "Ты — интеллектуальный персональный ассистент по планированию задач. "
+            "По названию и контексту задачи выполни комплексный анализ и верни СТРОГО валидный JSON со следующими полями:\n"
+            "{\n"
+            '  "description": "Форматированное Markdown описание задачи с ### Цель, ### Шаги, ### Критерии готовности",\n'
+            '  "subtasks": ["Четкий шаг 1", "Четкий шаг 2", "Четкий шаг 3", "Четкий шаг 4"],\n'
+            '  "suggested_priority": "low" | "medium" | "high" | "urgent",\n'
+            '  "estimated_days": число дней (от 1 до 30),\n'
+            '  "suggested_tags": ["Тег1", "Тег2"],\n'
+            '  "reasoning": "Краткое обоснование выбора приоритета и сроков"\n'
+            "}"
+        )
+        user_prompt = f"Задача: {title}\nКонтекст: {context or 'нет'}"
+
+        raw_res = await _call_llm([
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ], api_key=api_key, response_format_json=True)
+
+        if raw_res:
+            try:
+                parsed = json.loads(raw_res)
+                prio = parsed.get("suggested_priority", "medium")
+                if prio not in ["low", "medium", "high", "urgent"]:
+                    prio = "medium"
+                days = int(parsed.get("estimated_days", 3))
+                if days < 1:
+                    days = 1
+                if days > 90:
+                    days = 90
+                suggested_deadline = datetime.now(timezone.utc) + timedelta(days=days)
+                desc = parsed.get("description", "").strip() or f"### {title}\n\nВыполнить задачу в соответствии с намеченным планом."
+                subtasks = [str(st).strip() for st in parsed.get("subtasks", []) if str(st).strip()]
+                tags = [str(t).strip() for t in parsed.get("suggested_tags", []) if str(t).strip()][:3]
+                reasoning = parsed.get("reasoning", "Оценка сформирована AI-ассистентом").strip()
+                return AISmartAssistResponse(
+                    description=desc,
+                    subtasks=subtasks or ["Подготовиться к выполнению", "Выполнить основные действия", "Проверить результат"],
+                    suggested_priority=prio,
+                    suggested_deadline=suggested_deadline,
+                    suggested_tags=tags or ["Общее"],
+                    reasoning=reasoning,
+                    is_fallback=False,
+                )
+            except Exception as e:
+                logger.error(f"Error parsing LLM smart_assist: {e}")
+
+        # Heuristic fallback
+        desc_res = _heuristic_description(title, context)
+        dec_res = _heuristic_decompose(title, context)
+        prio_res = _heuristic_prioritize(title, context)
+        dead_res = _heuristic_deadline(title, context, prio_res["suggested_priority"])
+        
+        # Tags heuristic
+        combined = f"{title} {context or ''}".lower()
+        tags = []
+        if any(k in combined for k in ["код", "баг", "bug", "софт", "api", "бэк", "фронт", "разработк", "тест", "git"]):
+            tags.append("IT")
+        if any(k in combined for k in ["налог", "штраф", "долг", "банк", "оплат", "купить", "деньг"]):
+            tags.append("Финансы")
+        if any(k in combined for k in ["учеб", "диплом", "курсов", "экзамен", "лекци", "дз"]):
+            tags.append("Учеба")
+        if any(k in combined for k in ["врач", "здоров", "лекарств", "аптек", "больниц", "клиник"]):
+            tags.append("Здоровье")
+        if any(k in combined for k in ["дом", "квартир", "уборк", "ремонт", "кран"]):
+            tags.append("Дом")
+        if not tags:
+            tags.append("Общее")
+
+        return AISmartAssistResponse(
+            description=desc_res,
+            subtasks=dec_res,
+            suggested_priority=prio_res["suggested_priority"],
+            suggested_deadline=dead_res["suggested_deadline"],
+            suggested_tags=tags[:3],
+            reasoning=f"{prio_res['reasoning']}. {dead_res['reasoning']}",
+            is_fallback=True,
         )

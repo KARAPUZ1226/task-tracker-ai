@@ -4,18 +4,22 @@ import { Plus } from 'lucide-react';
 interface FloatingAddButtonProps {
   onClick: () => void;
   className?: string;
+  extended?: boolean;
 }
 
-export const FloatingAddButton: React.FC<FloatingAddButtonProps> = ({ onClick, className = '' }) => {
+export const FloatingAddButton: React.FC<FloatingAddButtonProps> = ({ onClick, className = '', extended = false }) => {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`aspect-square rounded-2xl bg-emerald-600 hover:bg-emerald-500 active:bg-emerald-700 text-white flex items-center justify-center backdrop-blur-xl shadow-xl shadow-emerald-600/35 border border-emerald-500/40 hover:border-emerald-400/60 ring-1 ring-white/25 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-zinc-900 hover:scale-105 active:scale-95 transition-all duration-300 shrink-0 group ${className}`}
-      title="Создать новую задачу"
+      className={`fixed bottom-6 right-6 z-30 h-14 ${
+        extended ? 'px-6 rounded-2xl gap-3' : 'w-14 rounded-2xl'
+      } bg-md-primary-container text-md-on-primary-container hover:shadow-xl hover:shadow-cyan-900/20 active:scale-95 border border-md-outline-variant/30 flex items-center justify-center transition-all duration-300 group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-md-primary ${className}`}
+      title="Создать задачу (N)"
       aria-label="Создать новую задачу"
     >
-      <Plus className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.4] transition-transform duration-300 group-hover:rotate-90" />
+      <Plus className="w-6 h-6 stroke-[2.2] transition-transform duration-300 group-hover:rotate-90 text-md-on-primary-container" />
+      {extended && <span className="font-semibold text-sm tracking-wide">Новая задача</span>}
     </button>
   );
 };

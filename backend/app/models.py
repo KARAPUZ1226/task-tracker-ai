@@ -26,6 +26,8 @@ class Task(Base):
     priority = Column(String(20), default="medium", nullable=False)  # low, medium, high, urgent
     status = Column(String(20), default="todo", nullable=False)      # todo, in_progress, done
     deadline = Column(DateTime(timezone=True), nullable=True)
+    tags = Column(String(500), nullable=True, default="")
+    is_pinned = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), default=utc_now, nullable=False)
     updated_at = Column(DateTime(timezone=True), default=utc_now, onupdate=utc_now, nullable=False)
 

@@ -7,13 +7,13 @@ import {
   Edit2,
   Trash2,
   ArrowRight,
-  ArrowLeft,
   Check,
   RotateCcw,
+  Pin,
+  PinOff,
   ChevronDown,
   ChevronUp,
   AlertCircle,
-  Eye,
 } from 'lucide-react';
 
 interface TaskCardProps {
@@ -22,6 +22,7 @@ interface TaskCardProps {
   onEdit: (task: Task) => void;
   onDelete: (id: number) => void;
   onStatusChange: (id: number, newStatus: Status) => void;
+  onTogglePin?: (id: number) => void;
   onToggleSubtask: (taskId: number, subtaskId: number, currentStatus: boolean) => void;
   onAddSubtask: (taskId: number, title: string) => void;
   onDeleteSubtask: (taskId: number, subtaskId: number) => void;
@@ -33,6 +34,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   onEdit,
   onDelete,
   onStatusChange,
+  onTogglePin,
   onToggleSubtask,
   onAddSubtask,
   onDeleteSubtask,
@@ -43,8 +45,8 @@ export const TaskCard: React.FC<TaskCardProps> = ({
   const priorityConfig: Record<Priority, { label: string; dot: string; badge: string }> = {
     urgent: {
       label: 'Срочный',
-      dot: 'bg-rose-500 animate-pulse',
-      badge: 'bg-rose-500/10 text-rose-500 border-rose-500/30 animate-pulse-glow',
+      dot: 'bg-rose-500',
+      badge: 'bg-rose-500/10 text-rose-500 border-rose-500/20',
     },
     high: {
       label: 'Высокий',
@@ -83,7 +85,7 @@ export const TaskCard: React.FC<TaskCardProps> = ({
 
   const completedSubtasks = task.subtasks?.filter((s) => s.is_completed).length || 0;
   const totalSubtasks = task.subtasks?.length || 0;
-  const allSubtasksDone = totalSubtasks > 0 && completedSubtasks === totalSubtasks;
+  const subtaskProgress = totalSubtasks > 0 ? (completedSubtasks / totalSubtasks) * 100 : 0;
 
   return (
     <div
@@ -93,218 +95,209 @@ export const TaskCard: React.FC<TaskCardProps> = ({
         e.dataTransfer.setData('taskId', String(task.id));
         e.dataTransfer.effectAllowed = 'move';
       }}
-      className="group relative rounded-2xl bg-white dark:bg-[#13161c] border border-zinc-200 dark:border-white/[0.08] hover:border-emerald-500/40 dark:hover:border-emerald-500/40 shadow-sm hover:shadow-2xl dark:hover:shadow-emerald-950/20 transition-all duration-300 ease-out hover:-translate-y-1.5 active:scale-[0.99] p-4 space-y-3 cursor-grab active:cursor-grabbing animate-fade-in min-w-0"
+      className={`group relative rounded-2xl bg-md-surface-container-low hover:bg-md-surface-container border ${
+        task.is_pinned
+          ? 'border-md-primary/50 shadow-sm'
+          : 'border-md-outline-variant/30 hover:border-md-primary/40'
+      } shadow-xs hover:shadow-md transition-all duration-300 p-4 space-y-3 cursor-grab active:cursor-grabbing min-w-0 animate-fade-in`}
     >
-      {/* Top row: Priority & Card Menu */}
+      {/* Top row: Priority Chip, Tags, Pin & Card Menu */}
       <div className="flex items-center justify-between gap-2">
-        <span
-          className={`inline-flex items-center gap-1.5 text-[11px] font-medium px-2 py-0.5 rounded-full border transition-all ${currentPriority.badge}`}
-        >
-          <span className={`w-1.5 h-1.5 rounded-full ${currentPriority.dot}`} />
-          <span>{currentPriority.label}</span>
-        </span>
-
-        {/* More actions dropdown button */}
-        <div className="relative">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setMenuOpen(!menuOpen);
-            }}
-            className="p-1 text-zinc-400 hover:text-zinc-700 dark:hover:text-white rounded-lg hover:bg-zinc-100 dark:hover:bg-white/[0.06] active:scale-90 hover:scale-110 transition-all duration-200"
-            title="Опции задачи"
+        <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+          {/* Priority chip */}
+          <span
+            className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold border ${currentPriority.badge}`}
           >
-            <MoreVertical className="w-3.5 h-3.5" />
-          </button>
+            <span className={`w-1.5 h-1.5 rounded-full ${currentPriority.dot}`} />
+            <span>{currentPriority.label}</span>
+          </span>
 
-          {menuOpen && (
-            <>
+          {/* Tags */}
+          {task.tags &&
+            task.tags.slice(0, 2).map((tag) => (
+              <span
+                key={tag}
+                className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-md-surface-container-high text-md-on-surface-variant"
+              >
+                #{tag}
+              </span>
+            ))}
+        </div>
+
+        {/* Pin & Menu */}
+        <div className="flex items-center gap-1">
+          {onTogglePin && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onTogglePin(task.id);
+              }}
+              className={`p-1 rounded-full transition-colors ${
+                task.is_pinned
+                  ? 'text-md-primary bg-md-primary-container/40'
+                  : 'text-md-on-surface-variant/50 hover:text-md-on-surface hover:bg-md-surface-container-high'
+              }`}
+              title={task.is_pinned ? 'Открепить задачу' : 'Закрепить задачу наверху'}
+            >
+              <Pin className={`w-3.5 h-3.5 ${task.is_pinned ? 'fill-current' : ''}`} />
+            </button>
+          )}
+
+          <div className="relative">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setMenuOpen(!menuOpen)}
+              }
+              className="p-1 rounded-full text-md-on-surface-variant hover:text-md-on-surface hover:bg-md-surface-container-high transition-colors"
+              title="Действия с задачей"
+            >
+              <MoreVertical className="w-4 h-4" />
+            </button>
+
+            {menuOpen && (
               <div
-                className="fixed inset-0 z-20"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setMenuOpen(false);
-                }}
-              />
-              <div
-                className="absolute right-0 top-6 z-30 w-40 rounded-xl bg-white dark:bg-[#1c1f26] border border-zinc-200 dark:border-white/[0.1] shadow-xl py-1 text-xs animate-pop-in"
+                className="absolute right-0 top-7 z-20 w-40 rounded-2xl bg-md-surface-container border border-md-outline-variant/30 shadow-xl p-1.5 space-y-0.5 animate-pop-in"
                 onClick={(e) => e.stopPropagation()}
               >
                 <button
                   type="button"
                   onClick={() => {
                     setMenuOpen(false);
-                    onView(task);
-                  }}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06]"
-                >
-                  <Eye className="w-3.5 h-3.5 text-zinc-400" />
-                  <span>Просмотр</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMenuOpen(false);
                     onEdit(task);
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-white/[0.06]"
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs font-medium text-md-on-surface hover:bg-md-surface-container-high transition-colors"
                 >
-                  <Edit2 className="w-3.5 h-3.5 text-zinc-400" />
+                  <Edit2 className="w-3.5 h-3.5 text-md-primary" />
                   <span>Редактировать</span>
                 </button>
-                <div className="my-1 border-t border-zinc-200 dark:border-white/[0.06]" />
+
                 <button
                   type="button"
                   onClick={() => {
                     setMenuOpen(false);
                     onDelete(task.id);
                   }}
-                  className="w-full flex items-center gap-2 px-3 py-1.5 text-rose-500 hover:bg-rose-500/10"
+                  className="w-full flex items-center gap-2 px-2.5 py-1.5 rounded-xl text-xs font-medium text-rose-500 hover:bg-rose-500/10 transition-colors"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   <span>Удалить</span>
                 </button>
               </div>
-            </>
-          )}
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Title & Description (Click opens Task Details view modal) */}
-      <div onClick={() => onView(task)} className="cursor-pointer space-y-1">
-        <h4
-          className={`text-sm font-semibold tracking-tight transition-colors hover:text-emerald-600 dark:hover:text-emerald-400 break-words ${
-            task.status === 'done'
-              ? 'line-through text-zinc-400 dark:text-zinc-500'
-              : 'text-zinc-900 dark:text-zinc-100'
+      {/* Title & Description Clickable to View */}
+      <div
+        onClick={() => onView(task)}
+        className="cursor-pointer space-y-1.5 group-hover:opacity-95"
+      >
+        <h3
+          className={`font-semibold text-sm text-md-on-surface leading-snug break-words ${
+            task.status === 'done' ? 'line-through opacity-70' : ''
           }`}
         >
           {task.title}
-        </h4>
+        </h3>
+
         {task.description && (
-          <p className="text-xs text-zinc-500 dark:text-zinc-400 line-clamp-2 leading-relaxed break-words">
-            {task.description.replace(/###/g, '').replace(/[*#]/g, '').trim()}
+          <p className="text-xs text-md-on-surface-variant line-clamp-2 break-words">
+            {task.description.replace(/###/g, '').replace(/[-*#]/g, '').trim()}
           </p>
         )}
       </div>
 
-      {/* Deadline Badge */}
-      {deadlineText && (
-        <div
-          className={`inline-flex items-center gap-1.5 text-[11px] px-2 py-0.5 rounded-md ${
-            isOverdue
-              ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
-              : 'bg-zinc-100 dark:bg-white/[0.04] text-zinc-500 dark:text-zinc-400 border border-zinc-200 dark:border-white/[0.06]'
-          }`}
-        >
-          {isOverdue ? (
-            <AlertCircle className="w-3 h-3 text-rose-500" />
-          ) : (
-            <Calendar className="w-3 h-3 text-zinc-400" />
-          )}
-          <span>{deadlineText}</span>
-          {isOverdue && <span className="font-medium ml-0.5">(просрочено)</span>}
-        </div>
-      )}
-
-      {/* Subtasks Accordion (if any) */}
+      {/* Subtasks Progress Bar & Toggle */}
       {totalSubtasks > 0 && (
-        <div className="border-t border-zinc-100 dark:border-white/[0.06] pt-2 min-w-0 w-full">
-          <div className="flex items-center justify-between">
+        <div className="space-y-1.5 pt-1">
+          <div className="flex items-center justify-between text-[11px] text-md-on-surface-variant">
             <button
               type="button"
               onClick={() => setExpanded(!expanded)}
-              className="flex items-center gap-1 text-[11px] font-medium text-zinc-500 hover:text-zinc-800 dark:text-zinc-400 dark:hover:text-white"
+              className="flex items-center gap-1 hover:text-md-on-surface font-medium"
             >
-              <span>Чеклист ({completedSubtasks}/{totalSubtasks})</span>
-              {expanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              <span>Подзадачи: {completedSubtasks}/{totalSubtasks}</span>
+              {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
             </button>
+            <span className="font-semibold">{Math.round(subtaskProgress)}%</span>
+          </div>
+
+          <div className="w-full bg-md-surface-container-high h-1.5 rounded-full overflow-hidden">
+            <div
+              className="bg-md-primary h-full rounded-full transition-all duration-300"
+              style={{ width: `${subtaskProgress}%` }}
+            />
           </div>
 
           {expanded && (
-            <SubtaskChecklist
-              taskId={task.id}
-              subtasks={task.subtasks}
-              onToggle={onToggleSubtask}
-              onAdd={onAddSubtask}
-              onDelete={onDeleteSubtask}
-              truncateText={true}
-            />
+            <div className="pt-2">
+              <SubtaskChecklist
+                taskId={task.id}
+                subtasks={task.subtasks}
+                onToggle={onToggleSubtask}
+                onAdd={onAddSubtask}
+                onDelete={onDeleteSubtask}
+              />
+            </div>
           )}
         </div>
       )}
 
-      {/* Bottom Row: Details link on left, Prominent Status Transition Button on RIGHT */}
-      <div className="flex items-center justify-between gap-1.5 flex-wrap pt-2 border-t border-zinc-100 dark:border-white/[0.06]">
-        <button
-          type="button"
-          onClick={() => onView(task)}
-          className="text-[11px] font-medium text-zinc-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors flex items-center gap-1 shrink-0 active:scale-95"
-        >
-          <Eye className="w-3 h-3 transition-transform group-hover:scale-110" />
-          <span>Подробнее</span>
-        </button>
+      {/* Card Footer: Deadline and One-Tap Status Transition Pill */}
+      <div className="flex items-center justify-between pt-2 border-t border-md-outline-variant/15 text-xs">
+        {/* Deadline */}
+        <div>
+          {deadlineText ? (
+            <span
+              className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-medium ${
+                isOverdue
+                  ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20'
+                  : 'bg-md-surface-container-high text-md-on-surface-variant'
+              }`}
+            >
+              <Calendar className="w-3 h-3" />
+              <span>{deadlineText}</span>
+              {isOverdue && <AlertCircle className="w-3 h-3 ml-0.5" />}
+            </span>
+          ) : (
+            <span className="text-[11px] text-md-on-surface-variant/50">Без срока</span>
+          )}
+        </div>
 
-        {/* Заметные кнопки переноса статуса в правом нижнем углу карточки */}
-        <div className="flex items-center gap-1.5 flex-wrap justify-end shrink-0">
+        {/* Quick One-Tap Status Action (No button slop!) */}
+        <div>
           {task.status === 'todo' && (
-            allSubtasksDone ? (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onStatusChange(task.id, 'done');
-                }}
-                className="group/btn flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-sm hover:shadow-md hover:shadow-emerald-600/30 hover:scale-[1.03] active:scale-95 transition-all duration-200"
-                title="Все подзадачи выполнены — завершить задачу"
-              >
-                <span>В готово</span>
-                <Check className="w-3.5 h-3.5 stroke-[2.5] transition-transform group-hover/btn:scale-110" />
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onStatusChange(task.id, 'in_progress');
-                }}
-                className="group/btn flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-semibold shadow-sm hover:shadow-md hover:shadow-amber-500/30 hover:scale-[1.03] active:scale-95 transition-all duration-200"
-                title="Перевести задачу в работу"
-              >
-                <span>В работу</span>
-                <ArrowRight className="w-3.5 h-3.5 transition-transform group-hover/btn:translate-x-0.5" />
-              </button>
-            )
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onStatusChange(task.id, 'in_progress');
+              }}
+              className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-all active:scale-95"
+              title="Перевести в работу"
+            >
+              <span>В работу</span>
+              <ArrowRight className="w-3 h-3" />
+            </button>
           )}
 
           {task.status === 'in_progress' && (
-            <div className="flex items-center gap-1.5 flex-wrap justify-end">
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onStatusChange(task.id, 'todo');
-                }}
-                className="group/btn flex items-center gap-1 px-2.5 py-1.5 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.12] text-zinc-600 dark:text-zinc-300 text-xs font-medium hover:scale-[1.02] active:scale-95 transition-all duration-200"
-                title="Вернуть задачу назад к выполнению"
-              >
-                <ArrowLeft className="w-3 h-3 transition-transform group-hover/btn:-translate-x-0.5" />
-                <span>К выполнению</span>
-              </button>
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onStatusChange(task.id, 'done');
-                }}
-                className="group/btn flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-sm hover:shadow-md hover:shadow-emerald-600/30 hover:scale-[1.03] active:scale-95 transition-all duration-200"
-                title="Завершить задачу"
-              >
-                <span>Готово</span>
-                <Check className="w-3.5 h-3.5 stroke-[2.5] transition-transform group-hover/btn:scale-110" />
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onStatusChange(task.id, 'done');
+              }}
+              className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/25 transition-all active:scale-95"
+              title="Завершить задачу"
+            >
+              <Check className="w-3 h-3" />
+              <span>Готово</span>
+            </button>
           )}
 
           {task.status === 'done' && (
@@ -312,12 +305,12 @@ export const TaskCard: React.FC<TaskCardProps> = ({
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                onStatusChange(task.id, 'in_progress');
+                onStatusChange(task.id, 'todo');
               }}
-              className="group/btn flex items-center gap-1 px-2.5 py-1 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.12] text-zinc-600 dark:text-zinc-300 text-xs font-medium hover:scale-[1.02] active:scale-95 transition-all duration-200"
-              title="Вернуть в работу"
+              className="flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold bg-md-surface-container-high text-md-on-surface-variant hover:text-md-on-surface transition-all active:scale-95"
+              title="Вернуть задачу к выполнению"
             >
-              <RotateCcw className="w-3 h-3 transition-transform group-hover/btn:-rotate-45" />
+              <RotateCcw className="w-3 h-3" />
               <span>Вернуть</span>
             </button>
           )}

@@ -181,14 +181,14 @@ export const CustomDeadlinePicker: React.FC<CustomDeadlinePickerProps> = ({ valu
               setTextInput(formatForInput(value));
             }}
             placeholder="ДД.ММ.ГГГГ ЧЧ:ММ (или выберите в окне)"
-            className="w-full bg-zinc-100 dark:bg-[#18181c] border border-zinc-300 dark:border-white/[0.08] focus:border-emerald-500 rounded-xl pl-9 pr-8 py-2 text-xs text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 outline-none transition-all"
+            className="w-full bg-md-surface-container border border-md-outline-variant/30 focus:border-md-primary rounded-2xl pl-9 pr-8 py-2.5 text-xs text-md-on-surface placeholder:text-md-on-surface-variant/50 outline-none transition-all"
           />
-          <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-emerald-600 dark:text-emerald-400 pointer-events-none" />
+          <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-md-primary pointer-events-none" />
           {value && (
             <button
               type="button"
               onClick={() => applyPreset('clear')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-md-on-surface-variant hover:text-md-on-surface p-1 rounded-full"
               title="Очистить дату"
             >
               <X className="w-3.5 h-3.5" />
@@ -200,15 +200,15 @@ export const CustomDeadlinePicker: React.FC<CustomDeadlinePickerProps> = ({ valu
           <button
             type="button"
             onClick={() => setIsOpen(!isOpen)}
-            className="px-3.5 py-2 rounded-xl bg-zinc-200 dark:bg-white/[0.06] hover:bg-zinc-300 dark:hover:bg-white/[0.1] text-xs font-semibold text-zinc-700 dark:text-zinc-200 transition-colors flex items-center gap-1.5"
+            className="px-3.5 py-2.5 rounded-2xl bg-md-surface-container hover:bg-md-surface-container-high text-xs font-semibold text-md-on-surface border border-md-outline-variant/30 transition-colors flex items-center gap-1.5"
           >
-            <Calendar className="w-3.5 h-3.5" />
+            <Calendar className="w-3.5 h-3.5 text-md-primary" />
             <span>Календарь</span>
           </button>
 
           {/* Popover Calendar Modal/Window positioned strictly under Calendar button */}
           {isOpen && (
-            <div className="absolute right-0 top-full mt-2 z-50 w-72 sm:w-80 rounded-2xl bg-white dark:bg-[#18181c] border border-zinc-200 dark:border-white/[0.12] shadow-2xl p-4 space-y-3 animate-fade-in">
+            <div className="absolute right-0 top-full mt-2 z-50 w-72 sm:w-80 rounded-[28px] bg-md-surface-container-low border border-md-outline-variant/30 shadow-2xl p-4 space-y-3 animate-fade-in">
           {/* Header with Month / Year & Nav */}
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">
@@ -390,28 +390,28 @@ export const CustomDeadlinePicker: React.FC<CustomDeadlinePickerProps> = ({ valu
         <button
           type="button"
           onClick={() => applyPreset('today')}
-          className="px-2.5 py-1 rounded-lg text-[11px] bg-zinc-100 dark:bg-white/[0.04] hover:bg-zinc-200 dark:hover:bg-white/[0.08] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 border border-zinc-200 dark:border-white/[0.06] transition-all"
+          className="px-3 py-1 rounded-full text-[11px] font-medium bg-md-surface-container hover:bg-md-surface-container-high text-md-on-surface-variant border border-md-outline-variant/30 transition-all active:scale-95"
         >
           Сегодня 18:00
         </button>
         <button
           type="button"
           onClick={() => applyPreset('tomorrow')}
-          className="px-2.5 py-1 rounded-lg text-[11px] bg-zinc-100 dark:bg-white/[0.04] hover:bg-zinc-200 dark:hover:bg-white/[0.08] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 border border-zinc-200 dark:border-white/[0.06] transition-all"
+          className="px-3 py-1 rounded-full text-[11px] font-medium bg-md-surface-container hover:bg-md-surface-container-high text-md-on-surface-variant border border-md-outline-variant/30 transition-all active:scale-95"
         >
           Завтра 12:00
         </button>
         <button
           type="button"
           onClick={() => applyPreset('3days')}
-          className="px-2.5 py-1 rounded-lg text-[11px] bg-zinc-100 dark:bg-white/[0.04] hover:bg-zinc-200 dark:hover:bg-white/[0.08] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 border border-zinc-200 dark:border-white/[0.06] transition-all"
+          className="px-3 py-1 rounded-full text-[11px] font-medium bg-md-surface-container hover:bg-md-surface-container-high text-md-on-surface-variant border border-md-outline-variant/30 transition-all active:scale-95"
         >
           Через 3 дня
         </button>
         <button
           type="button"
           onClick={() => applyPreset('week')}
-          className="px-2.5 py-1 rounded-lg text-[11px] bg-zinc-100 dark:bg-white/[0.04] hover:bg-zinc-200 dark:hover:bg-white/[0.08] text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 border border-zinc-200 dark:border-white/[0.06] transition-all"
+          className="px-3 py-1 rounded-full text-[11px] font-medium bg-md-surface-container hover:bg-md-surface-container-high text-md-on-surface-variant border border-md-outline-variant/30 transition-all active:scale-95"
         >
           Через неделю
         </button>
@@ -419,7 +419,7 @@ export const CustomDeadlinePicker: React.FC<CustomDeadlinePickerProps> = ({ valu
           <button
             type="button"
             onClick={() => applyPreset('clear')}
-            className="px-2 py-1 rounded-lg text-[11px] text-rose-500 hover:bg-rose-500/10 transition-colors ml-auto"
+            className="px-3 py-1 rounded-full text-[11px] font-semibold text-rose-500 hover:bg-rose-500/10 transition-colors ml-auto"
           >
             Сбросить
           </button>

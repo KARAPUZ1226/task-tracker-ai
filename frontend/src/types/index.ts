@@ -29,6 +29,8 @@ export interface Task {
   priority: Priority;
   status: Status;
   deadline?: string | null;
+  tags?: string[];
+  is_pinned?: boolean;
   created_at: string;
   updated_at: string;
   subtasks: Subtask[];
@@ -39,6 +41,8 @@ export interface TaskCreatePayload {
   description?: string;
   priority: Priority;
   deadline?: string;
+  tags?: string[];
+  is_pinned?: boolean;
   subtasks?: string[];
 }
 
@@ -48,7 +52,20 @@ export interface TaskUpdatePayload {
   priority?: Priority;
   status?: Status;
   deadline?: string | null;
+  tags?: string[];
+  is_pinned?: boolean;
   subtasks?: string[];
+}
+
+export interface TaskStats {
+  total_tasks: number;
+  todo_tasks: number;
+  in_progress_tasks: number;
+  done_tasks: number;
+  overdue_tasks: number;
+  completion_rate: number;
+  total_subtasks: number;
+  completed_subtasks: number;
 }
 
 export interface AIDecomposeResponse {
@@ -72,6 +89,16 @@ export interface AIDeadlineResponse {
 
 export interface AIPrioritizeResponse {
   suggested_priority: Priority;
+  reasoning: string;
+  is_fallback: boolean;
+}
+
+export interface AISmartAssistResponse {
+  description: string;
+  subtasks: string[];
+  suggested_priority: Priority;
+  suggested_deadline?: string | null;
+  suggested_tags: string[];
   reasoning: string;
   is_fallback: boolean;
 }

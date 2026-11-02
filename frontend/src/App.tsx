@@ -1,15 +1,18 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from './context/AuthContext';
 import { useTheme } from './context/ThemeContext';
 import { api } from './services/api';
-import { Task, Status, Priority } from './types';
+import { Task, Status, Priority, TaskStats } from './types';
 import { Navbar } from './components/Navbar';
 import { KanbanBoard } from './components/KanbanBoard';
+import { ListView } from './components/ListView';
+import { FilterBar } from './components/FilterBar';
+import { ProductivityBar } from './components/ProductivityBar';
 import { TaskModal } from './components/TaskModal';
 import { TaskDetailModal } from './components/TaskDetailModal';
 import { SettingsModal } from './components/SettingsModal';
 import { AuthModal } from './components/AuthModal';
-import { BottomToolbar } from './components/BottomToolbar';
+import { FloatingAddButton } from './components/FloatingAddButton';
 import { Toaster, toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import { Loader2 } from 'lucide-react';
@@ -19,13 +22,26 @@ export const App: React.FC = () => {
   const { theme } = useTheme();
 
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [stats, setStats] = useState<TaskStats | null>(null);
   const [loadingTasks, setLoadingTasks] = useState(false);
+
+  // View Mode: 'kanban' | 'list'
+  const [viewMode, setViewMode] = useState<'kanban' | 'list'>(() => {
+    return (localStorage.getItem('view_mode') as 'kanban' | 'list') || 'kanban';
+  });
+
+  const handleViewModeChange = (mode: 'kanban' | 'list') => {
+    setViewMode(mode);
+    localStorage.setItem('view_mode', mode);
+  };
 
   // Filters state
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
-  const [activeColumn, setActiveColumn] = useState<Status>('todo');
+  const [statusFilter, setStatusFilter] = useState<Status | 'all'>('all');
   const [priorityFilter, setPriorityFilter] = useState<Priority | 'all'>('all');
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [sortBy, setSortBy] = useState<string>('default');
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -39,7 +55,7 @@ export const App: React.FC = () => {
   const [taskToEdit, setTaskToEdit] = useState<Task | null>(null);
   const [initialStatus, setInitialStatus] = useState<Status>('todo');
 
-  // View task details state (Задача 4)
+  // Detail Modal state
   const [taskToView, setTaskToView] = useState<Task | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
 
@@ -50,29 +66,49 @@ export const App: React.FC = () => {
       particleCount: 100,
       spread: 70,
       origin: { y: 0.6 },
-      colors: ['#10b981', '#f59e0b', '#06b6d4', '#ec4899', '#8b5cf6'],
+      colors: ['#006874', '#82d3e0', '#f59e0b', '#10b981', '#63597c'],
     });
   }, []);
 
-  const loadTasks = useCallback(async () => {
+  // Compute available tags from all current tasks
+  const availableTags = useMemo(() => {
+    const tagSet = new Set<string>();
+    tasks.forEach((t) => {
+      if (t.tags && Array.isArray(t.tags)) {
+        t.tags.forEach((tag) => {
+          if (tag.trim()) tagSet.add(tag.trim());
+        });
+      }
+    });
+    return Array.from(tagSet);
+  }, [tasks]);
+
+  const loadTasksAndStats = useCallback(async () => {
     if (!user) return;
     setLoadingTasks(true);
     try {
-      const data = await api.getTasks({
-        search: debouncedSearch || undefined,
-        priority: priorityFilter === 'all' ? undefined : priorityFilter,
-      });
-      setTasks(data);
+      const [tasksData, statsData] = await Promise.all([
+        api.getTasks({
+          search: debouncedSearch || undefined,
+          status: statusFilter === 'all' ? undefined : statusFilter,
+          priority: priorityFilter === 'all' ? undefined : priorityFilter,
+          tag: selectedTag || undefined,
+          sort_by: sortBy === 'default' ? undefined : sortBy,
+        }),
+        api.getStats().catch(() => null),
+      ]);
+      setTasks(tasksData);
+      if (statsData) setStats(statsData);
     } catch (err: any) {
       toast.error(err.message || 'Ошибка загрузки задач');
     } finally {
       setLoadingTasks(false);
     }
-  }, [user, debouncedSearch, priorityFilter]);
+  }, [user, debouncedSearch, statusFilter, priorityFilter, selectedTag, sortBy]);
 
   useEffect(() => {
-    loadTasks();
-  }, [loadTasks]);
+    loadTasksAndStats();
+  }, [loadTasksAndStats]);
 
   // Keyboard shortcut: Press "n" to open new task modal
   useEffect(() => {
@@ -102,6 +138,8 @@ export const App: React.FC = () => {
     priority: Priority;
     status?: Status;
     deadline?: string | null;
+    tags?: string[];
+    is_pinned?: boolean;
     subtasks?: string[];
   }) => {
     if (taskToEdit) {
@@ -111,6 +149,8 @@ export const App: React.FC = () => {
         priority: data.priority,
         status: data.status,
         deadline: data.deadline,
+        tags: data.tags,
+        is_pinned: data.is_pinned,
         subtasks: data.subtasks,
       });
       setTasks((prev) => prev.map((t) => (t.id === updated.id ? updated : t)));
@@ -127,11 +167,14 @@ export const App: React.FC = () => {
         description: data.description || undefined,
         priority: data.priority,
         deadline: data.deadline || undefined,
+        tags: data.tags,
+        is_pinned: data.is_pinned,
         subtasks: data.subtasks,
       });
       setTasks((prev) => [created, ...prev]);
       toast.success('Новая задача создана!');
     }
+    api.getStats().then(setStats).catch(() => {});
   };
 
   const handleDeleteTask = async (id: number) => {
@@ -143,6 +186,7 @@ export const App: React.FC = () => {
         setTaskToView(null);
       }
       toast.success('Задача удалена');
+      api.getStats().then(setStats).catch(() => {});
     } catch (err: any) {
       toast.error(err.message || 'Ошибка удаления задачи');
     }
@@ -163,8 +207,33 @@ export const App: React.FC = () => {
       } else {
         toast.info('Задача возвращена к выполнению');
       }
+      api.getStats().then(setStats).catch(() => {});
     } catch (err: any) {
       toast.error(err.message || 'Ошибка обновления статуса');
+    }
+  };
+
+  const handleTogglePin = async (id: number) => {
+    try {
+      const updated = await api.togglePin(id);
+      setTasks((prev) => prev.map((t) => (t.id === id ? updated : t)));
+      if (taskToView && taskToView.id === id) {
+        setTaskToView(updated);
+      }
+      toast.info(updated.is_pinned ? 'Задача закреплена наверху' : 'Задача откреплена');
+    } catch (err: any) {
+      toast.error(err.message || 'Ошибка закрепления задачи');
+    }
+  };
+
+  const handleClearCompleted = async () => {
+    try {
+      const res = await api.clearCompleted();
+      setTasks((prev) => prev.filter((t) => t.status !== 'done'));
+      toast.success(`Удалено выполненных задач: ${res.deleted_count}`);
+      api.getStats().then(setStats).catch(() => {});
+    } catch (err: any) {
+      toast.error(err.message || 'Ошибка очистки выполненных задач');
     }
   };
 
@@ -189,6 +258,7 @@ export const App: React.FC = () => {
           return updatedTask;
         })
       );
+      api.getStats().then(setStats).catch(() => {});
     } catch (err: any) {
       toast.error(err.message || 'Ошибка изменения статуса подзадачи');
     }
@@ -208,6 +278,7 @@ export const App: React.FC = () => {
         })
       );
       toast.success('Подзадача добавлена');
+      api.getStats().then(setStats).catch(() => {});
     } catch (err: any) {
       toast.error(err.message || 'Ошибка добавления подзадачи');
     }
@@ -230,6 +301,7 @@ export const App: React.FC = () => {
         })
       );
       toast.success('Подзадача удалена');
+      api.getStats().then(setStats).catch(() => {});
     } catch (err: any) {
       toast.error(err.message || 'Ошибка удаления подзадачи');
     }
@@ -246,10 +318,22 @@ export const App: React.FC = () => {
     setIsTaskModalOpen(true);
   };
 
+  const handleResetFilters = () => {
+    setSearch('');
+    setStatusFilter('all');
+    setPriorityFilter('all');
+    setSelectedTag(null);
+    setSortBy('default');
+  };
+
+  const hasActiveFilters = Boolean(
+    search || statusFilter !== 'all' || priorityFilter !== 'all' || selectedTag || sortBy !== 'default'
+  );
+
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-[#090a0f]">
-        <Loader2 className="w-8 h-8 text-emerald-500 animate-spin" />
+      <div className="min-h-screen flex items-center justify-center bg-md-surface">
+        <Loader2 className="w-8 h-8 text-md-primary animate-spin" />
       </div>
     );
   }
@@ -270,11 +354,13 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-zinc-50 dark:bg-[#090a0f] text-zinc-900 dark:text-zinc-100 transition-colors duration-300">
+    <div className="min-h-screen flex flex-col bg-md-surface text-md-on-surface transition-colors duration-300">
       <Toaster theme={theme} position="top-right" richColors />
 
-      {/* Navigation with Minimalist Logo, Theme Switcher, Mobile + button & 3-stripe Menu */}
+      {/* Material You Top App Bar */}
       <Navbar
+        viewMode={viewMode}
+        onViewModeChange={handleViewModeChange}
         onOpenSettings={() => setIsSettingsOpen(true)}
         onOpenCreate={() => {
           setTaskToEdit(null);
@@ -283,16 +369,41 @@ export const App: React.FC = () => {
         }}
       />
 
-      {/* Main Content */}
+      {/* Main Content Container */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 relative">
+        {/* Productivity Analytics Bar */}
+        <ProductivityBar
+          stats={stats}
+          onClearCompleted={handleClearCompleted}
+        />
+
+        {/* Material 3 Filter & Search Controls */}
+        <FilterBar
+          search={search}
+          onSearchChange={setSearch}
+          statusFilter={statusFilter}
+          onStatusChange={setStatusFilter}
+          priorityFilter={priorityFilter}
+          onPriorityChange={setPriorityFilter}
+          selectedTag={selectedTag}
+          onTagChange={setSelectedTag}
+          availableTags={availableTags}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          columnCounts={columnCounts}
+          onResetFilters={handleResetFilters}
+          hasActiveFilters={hasActiveFilters}
+        />
+
+        {/* Task Views */}
         {loadingTasks ? (
           <div className="h-64 flex items-center justify-center">
-            <Loader2 className="w-6 h-6 text-emerald-500 animate-spin" />
+            <Loader2 className="w-8 h-8 text-md-primary animate-spin" />
           </div>
-        ) : (
+        ) : viewMode === 'kanban' ? (
           <KanbanBoard
             tasks={tasks}
-            activeColumn={activeColumn}
+            activeColumn={statusFilter}
             onViewTask={handleOpenView}
             onEditTask={(task) => {
               setTaskToEdit(task);
@@ -300,6 +411,7 @@ export const App: React.FC = () => {
             }}
             onDeleteTask={handleDeleteTask}
             onStatusChange={handleStatusChange}
+            onTogglePin={handleTogglePin}
             onToggleSubtask={handleToggleSubtask}
             onAddSubtask={handleAddSubtask}
             onDeleteSubtask={handleDeleteSubtask}
@@ -309,32 +421,37 @@ export const App: React.FC = () => {
               setIsTaskModalOpen(true);
             }}
           />
+        ) : (
+          <ListView
+            tasks={tasks}
+            onViewTask={handleOpenView}
+            onEditTask={(task) => {
+              setTaskToEdit(task);
+              setIsTaskModalOpen(true);
+            }}
+            onDeleteTask={handleDeleteTask}
+            onStatusChange={handleStatusChange}
+            onTogglePin={handleTogglePin}
+            onOpenCreate={() => {
+              setTaskToEdit(null);
+              setInitialStatus('todo');
+              setIsTaskModalOpen(true);
+            }}
+          />
         )}
       </main>
 
-      {/* Стек полупрозрачных блоков внизу: Поиск + Кнопка «+» -> Приоритеты -> Категории */}
-      <BottomToolbar
-        search={search}
-        onSearchChange={setSearch}
-        priorityFilter={priorityFilter}
-        onPriorityChange={setPriorityFilter}
-        activeColumn={activeColumn}
-        onColumnChange={(status) => {
-          setActiveColumn(status);
-          const el = document.getElementById(`column-${status}`);
-          if (el) {
-            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-          }
-        }}
-        columnCounts={columnCounts}
-        onOpenCreate={() => {
+      {/* Material 3 Floating Action Button (Fixed Bottom-Right) */}
+      <FloatingAddButton
+        onClick={() => {
           setTaskToEdit(null);
           setInitialStatus('todo');
           setIsTaskModalOpen(true);
         }}
+        extended={false}
       />
 
-      {/* Задача 4: Модальное окно просмотра деталей задачи */}
+      {/* Task Detail Modal */}
       <TaskDetailModal
         task={taskToView}
         isOpen={isDetailOpen}
@@ -345,12 +462,13 @@ export const App: React.FC = () => {
         onEdit={handleOpenEditFromView}
         onDelete={handleDeleteTask}
         onStatusChange={handleStatusChange}
+        onTogglePin={handleTogglePin}
         onToggleSubtask={handleToggleSubtask}
         onAddSubtask={handleAddSubtask}
         onDeleteSubtask={handleDeleteSubtask}
       />
 
-      {/* Модальное окно создания и редактирования задачи */}
+      {/* Task Create / Edit Modal */}
       <TaskModal
         isOpen={isTaskModalOpen}
         onClose={() => setIsTaskModalOpen(false)}
@@ -359,8 +477,11 @@ export const App: React.FC = () => {
         onSave={handleSaveTask}
       />
 
-      {/* Настройки AI ключа */}
-      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+      />
     </div>
   );
 };

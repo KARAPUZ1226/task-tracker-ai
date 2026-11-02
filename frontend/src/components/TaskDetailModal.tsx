@@ -9,10 +9,12 @@ import {
   Calendar,
   AlertCircle,
   ArrowRight,
-  ArrowLeft,
   CheckCircle2,
   RotateCcw,
-  Sparkles,
+  Pin,
+  Clock,
+  Check,
+  Tag,
 } from 'lucide-react';
 
 interface TaskDetailModalProps {
@@ -22,6 +24,7 @@ interface TaskDetailModalProps {
   onEdit: (task: Task) => void;
   onDelete: (id: number) => void;
   onStatusChange: (id: number, status: Status) => void;
+  onTogglePin?: (id: number) => void;
   onToggleSubtask: (taskId: number, subtaskId: number, currentStatus: boolean) => void;
   onAddSubtask: (taskId: number, title: string) => void;
   onDeleteSubtask: (taskId: number, subtaskId: number) => void;
@@ -34,6 +37,7 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   onEdit,
   onDelete,
   onStatusChange,
+  onTogglePin,
   onToggleSubtask,
   onAddSubtask,
   onDeleteSubtask,
@@ -49,32 +53,35 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
     high: {
       label: 'Высокий',
       dot: 'bg-amber-500',
-      badge: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+      badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
     },
     medium: {
       label: 'Средний',
       dot: 'bg-slate-400',
-      badge: 'bg-slate-500/10 text-slate-500 dark:text-slate-400 border-slate-500/20',
+      badge: 'bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20',
     },
     low: {
       label: 'Низкий',
       dot: 'bg-zinc-400',
-      badge: 'bg-zinc-500/10 text-zinc-500 dark:text-zinc-400 border-zinc-500/20',
+      badge: 'bg-zinc-500/10 text-zinc-600 dark:text-zinc-400 border-zinc-500/20',
     },
   };
 
-  const statusConfig: Record<Status, { label: string; badge: string }> = {
+  const statusConfig: Record<Status, { label: string; badge: string; icon: React.ReactNode }> = {
     todo: {
       label: 'К выполнению',
-      badge: 'bg-zinc-200 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 border-zinc-300 dark:border-white/[0.08]',
+      badge: 'bg-md-surface-container text-md-on-surface-variant border-md-outline-variant/30',
+      icon: <Clock className="w-3.5 h-3.5 text-zinc-400" />,
     },
     in_progress: {
       label: 'В работе',
-      badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20',
+      badge: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
+      icon: <Clock className="w-3.5 h-3.5 text-amber-500" />,
     },
     done: {
       label: 'Готово',
-      badge: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20',
+      badge: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
+      icon: <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />,
     },
   };
 
@@ -97,188 +104,199 @@ export const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
     }
   }
 
-  const completedSubs = task.subtasks?.filter((s) => s.is_completed).length || 0;
+  const completedSubs = task.subtasks?.filter((st) => st.is_completed).length || 0;
   const totalSubs = task.subtasks?.length || 0;
-  const allSubtasksDone = totalSubs > 0 && completedSubs === totalSubs;
+  const subtaskProgress = totalSubs > 0 ? (completedSubs / totalSubs) * 100 : 0;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in">
-      <div
-        className="w-full max-w-2xl bg-white dark:bg-[#12141a] border border-zinc-200 dark:border-white/[0.1] rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh] animate-pop-in"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-200 dark:border-white/[0.08] bg-zinc-50/50 dark:bg-[#161922]">
-          <div className="flex items-center gap-2">
-            <span className={`inline-flex items-center gap-1.5 text-xs font-medium px-2.5 py-1 rounded-full border ${p.badge}`}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/60 backdrop-blur-sm overflow-y-auto">
+      <div className="w-full max-w-2xl my-auto rounded-[28px] bg-md-surface-container-low border border-md-outline-variant/30 shadow-2xl p-5 sm:p-7 space-y-5 animate-pop-in">
+        {/* Top Badges & Close Button */}
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Status Badge */}
+            <span
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${s.badge}`}
+            >
+              {s.icon}
+              <span>{s.label}</span>
+            </span>
+
+            {/* Priority Badge */}
+            <span
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border ${p.badge}`}
+            >
               <span className={`w-1.5 h-1.5 rounded-full ${p.dot}`} />
               <span>{p.label}</span>
             </span>
+
+            {/* Pinned pill */}
+            {task.is_pinned && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold bg-md-primary-container text-md-on-primary-container">
+                <Pin className="w-3 h-3 fill-current" />
+                <span>Закреплено</span>
+              </span>
+            )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            {onTogglePin && (
+              <button
+                type="button"
+                onClick={() => onTogglePin(task.id)}
+                className="p-1.5 rounded-full text-md-on-surface-variant hover:text-md-on-surface hover:bg-md-surface-container transition-colors"
+                title={task.is_pinned ? 'Открепить' : 'Закрепить'}
+              >
+                <Pin className={`w-4 h-4 ${task.is_pinned ? 'fill-current text-md-primary' : ''}`} />
+              </button>
+            )}
+
             <button
-              onClick={() => {
-                onClose();
-                onEdit(task);
-              }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-zinc-100 hover:bg-zinc-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.1] text-zinc-700 dark:text-zinc-200 transition-colors"
-            >
-              <Edit2 className="w-3.5 h-3.5" />
-              <span>Изменить</span>
-            </button>
-            <button
+              type="button"
               onClick={onClose}
-              className="text-zinc-400 hover:text-zinc-600 dark:hover:text-white p-1 rounded-lg hover:bg-zinc-100 dark:hover:bg-white/[0.06] transition-colors"
+              className="p-1.5 rounded-full text-md-on-surface-variant hover:text-md-on-surface hover:bg-md-surface-container transition-colors"
+              title="Закрыть (Esc)"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Content Body */}
-        <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Title & Status (плашка статуса перенесена сюда на 5% меньше) */}
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex-1 min-w-0">
-              <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 tracking-tight leading-snug break-words">
-                {task.title}
-              </h2>
-              {deadlineFormatted && (
-                <div className="flex items-center gap-1.5 mt-2 text-xs">
-                  {isOverdue ? (
-                    <span className="flex items-center gap-1 text-rose-500 font-medium">
-                      <AlertCircle className="w-3.5 h-3.5" />
-                      <span>Дедлайн: {deadlineFormatted} (просрочено)</span>
-                    </span>
-                  ) : (
-                    <span className="flex items-center gap-1 text-zinc-500 dark:text-zinc-400">
-                      <Calendar className="w-3.5 h-3.5" />
-                      <span>Дедлайн: {deadlineFormatted}</span>
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
+        {/* Title */}
+        <h2 className="text-xl sm:text-2xl font-bold text-md-on-surface leading-snug break-words">
+          {task.title}
+        </h2>
 
-            {/* Плашка статуса в выделенной области на фото 2 */}
+        {/* Tags */}
+        {task.tags && task.tags.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5">
+            {task.tags.map((tag) => (
+              <span
+                key={tag}
+                className="px-2.5 py-1 rounded-full text-xs font-medium bg-md-surface-container-high text-md-on-surface-variant flex items-center gap-1"
+              >
+                <Tag className="w-3 h-3" />
+                <span>{tag}</span>
+              </span>
+            ))}
+          </div>
+        )}
+
+        {/* Deadline & Date info */}
+        {deadlineFormatted && (
+          <div className="flex items-center gap-2 text-xs">
             <span
-              className={`inline-flex items-center shrink-0 text-[11px] font-medium px-2.5 py-0.5 rounded-full border shadow-xs ${s.badge}`}
+              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium ${
+                isOverdue
+                  ? 'bg-rose-500/10 text-rose-500 border border-rose-500/20 font-semibold'
+                  : 'bg-md-surface-container text-md-on-surface-variant border border-md-outline-variant/20'
+              }`}
             >
-              {s.label}
+              <Calendar className="w-3.5 h-3.5" />
+              <span>Срок: {deadlineFormatted}</span>
+              {isOverdue && <AlertCircle className="w-3.5 h-3.5 ml-1 text-rose-500" />}
             </span>
           </div>
+        )}
 
-          {/* Description with rich Markdown View */}
-          <div className="p-4 rounded-xl bg-zinc-50 dark:bg-[#161922] border border-zinc-200 dark:border-white/[0.06] space-y-2">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-              Описание
-            </div>
+        {/* Description Section with Markdown */}
+        <div className="space-y-2">
+          <h3 className="text-xs font-bold text-md-on-surface-variant tracking-wider uppercase">
+            Описание
+          </h3>
+          <div className="p-4 rounded-2xl bg-md-surface-container border border-md-outline-variant/20 text-xs text-md-on-surface min-h-[70px] max-h-72 overflow-y-auto">
             {task.description ? (
               <MarkdownView content={task.description} />
             ) : (
-              <p className="text-xs text-zinc-400 italic">Описание не указано</p>
+              <span className="text-md-on-surface-variant/50 italic">Нет описания</span>
+            )}
+          </div>
+        </div>
+
+        {/* Subtasks Section with Interactive Checklist */}
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between text-xs">
+            <h3 className="font-bold text-md-on-surface-variant tracking-wider uppercase">
+              Подзадачи ({completedSubs}/{totalSubs})
+            </h3>
+            {totalSubs > 0 && (
+              <span className="font-semibold text-md-primary">{Math.round(subtaskProgress)}%</span>
             )}
           </div>
 
-          {/* Subtasks Checklist */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:text-zinc-500">
-                Подзадачи чеклиста ({task.subtasks?.length || 0})
-              </h3>
+          {totalSubs > 0 && (
+            <div className="w-full bg-md-surface-container h-2 rounded-full overflow-hidden">
+              <div
+                className="bg-md-primary h-full rounded-full transition-all duration-300"
+                style={{ width: `${subtaskProgress}%` }}
+              />
             </div>
+          )}
+
+          <div className="p-3.5 rounded-2xl bg-md-surface-container border border-md-outline-variant/20">
             <SubtaskChecklist
               taskId={task.id}
-              subtasks={task.subtasks || []}
+              subtasks={task.subtasks}
               onToggle={onToggleSubtask}
               onAdd={onAddSubtask}
               onDelete={onDeleteSubtask}
-              truncateText={false}
             />
           </div>
         </div>
 
-        {/* Footer with status mover and delete */}
-        <div className="flex items-center justify-between px-6 py-4 border-t border-zinc-200 dark:border-white/[0.08] bg-zinc-50/50 dark:bg-[#161922]">
+        {/* Footer Actions */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-md-outline-variant/15">
+          {/* Delete Action */}
           <button
-            onClick={() => {
-              if (confirm('Удалить эту задачу?')) {
-                onDelete(task.id);
-                onClose();
-              }
-            }}
-            className="flex items-center gap-1.5 text-xs text-rose-500 hover:text-rose-600 dark:hover:text-rose-400 px-3 py-1.5 rounded-lg hover:bg-rose-500/10 transition-colors"
+            type="button"
+            onClick={() => onDelete(task.id)}
+            className="flex items-center justify-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold text-rose-500 hover:bg-rose-500/10 transition-colors"
           >
-            <Trash2 className="w-3.5 h-3.5" />
+            <Trash2 className="w-4 h-4" />
             <span>Удалить задачу</span>
           </button>
 
-          {/* Status action */}
-          <div className="flex items-center gap-2">
+          {/* Edit & Quick Status Progression */}
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => onEdit(task)}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-full text-xs font-semibold bg-md-surface-container hover:bg-md-surface-container-high text-md-on-surface border border-md-outline-variant/30 transition-all active:scale-95"
+            >
+              <Edit2 className="w-3.5 h-3.5" />
+              <span>Редактировать</span>
+            </button>
+
             {task.status === 'todo' && (
-              allSubtasksDone ? (
-                <button
-                  onClick={() => {
-                    onStatusChange(task.id, 'done');
-                    onClose();
-                  }}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-md shadow-emerald-500/20 transition-all active:scale-[0.98]"
-                  title="Все подзадачи выполнены — завершить задачу"
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>В готово</span>
-                </button>
-              ) : (
-                <button
-                  onClick={() => {
-                    onStatusChange(task.id, 'in_progress');
-                    onClose();
-                  }}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-medium shadow-md shadow-amber-500/20 transition-all active:scale-[0.98]"
-                >
-                  <span>Перевести в работу</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              )
+              <button
+                type="button"
+                onClick={() => onStatusChange(task.id, 'in_progress')}
+                className="flex items-center gap-1.5 px-5 py-2 rounded-full text-xs font-bold bg-amber-500 text-white hover:bg-amber-600 transition-all active:scale-95 shadow-xs"
+              >
+                <span>В работу</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
             )}
 
             {task.status === 'in_progress' && (
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={() => {
-                    onStatusChange(task.id, 'todo');
-                    onClose();
-                  }}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-white/[0.06] dark:hover:bg-white/[0.12] text-zinc-700 dark:text-zinc-200 text-xs font-medium transition-all"
-                  title="Вернуть задачу к выполнению"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5" />
-                  <span>К выполнению</span>
-                </button>
-                <button
-                  onClick={() => {
-                    onStatusChange(task.id, 'done');
-                    onClose();
-                  }}
-                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-medium shadow-md shadow-emerald-500/20 transition-all active:scale-[0.98]"
-                >
-                  <CheckCircle2 className="w-3.5 h-3.5" />
-                  <span>Завершить задачу</span>
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => onStatusChange(task.id, 'done')}
+                className="flex items-center gap-1.5 px-5 py-2 rounded-full text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-all active:scale-95 shadow-xs"
+              >
+                <Check className="w-3.5 h-3.5" />
+                <span>Завершить</span>
+              </button>
             )}
 
             {task.status === 'done' && (
               <button
-                onClick={() => {
-                  onStatusChange(task.id, 'in_progress');
-                  onClose();
-                }}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-zinc-200 dark:bg-white/[0.08] hover:bg-zinc-300 dark:hover:bg-white/[0.14] text-zinc-800 dark:text-zinc-200 text-xs font-medium transition-all"
+                type="button"
+                onClick={() => onStatusChange(task.id, 'todo')}
+                className="flex items-center gap-1.5 px-5 py-2 rounded-full text-xs font-bold bg-md-primary-container text-md-on-primary-container hover:shadow-xs transition-all active:scale-95"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                <span>Вернуть в работу</span>
+                <span>Вернуть</span>
               </button>
             )}
           </div>

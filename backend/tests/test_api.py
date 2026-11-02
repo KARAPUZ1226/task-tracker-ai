@@ -391,4 +391,87 @@ def test_subtask_reorder_and_rename_sync(client):
     # Preserved completion for Шаг 1
     assert updated_subs[1]["is_completed"] is True
 
+def test_task_stats_and_bulk_actions(client):
+    reg = client.post("/api/auth/register", json={
+        "email": "user_stats@example.com",
+        "password": "password_stats"
+    })
+    token = reg.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # 1. Initially 0 stats
+    res_stats = client.get("/api/tasks/stats", headers=headers)
+    assert res_stats.status_code == 200
+    assert res_stats.json()["total_tasks"] == 0
+
+    # 2. Create tasks with subtasks, tags and pin
+    t1 = client.post("/api/tasks", headers=headers, json={
+        "title": "Задача 1",
+        "priority": "high",
+        "tags": ["Работа", "IT"],
+        "is_pinned": True,
+        "subtasks": ["Подзадача 1A", "Подзадача 1B"]
+    })
+    t1_id = t1.json()["id"]
+    assert t1.json()["is_pinned"] is True
+    assert t1.json()["tags"] == ["Работа", "IT"]
+
+    t2 = client.post("/api/tasks", headers=headers, json={
+        "title": "Задача 2 Завершенная",
+        "priority": "low",
+        "tags": ["Дом"],
+        "deadline": "2020-01-01T10:00:00Z"
+    })
+    t2_id = t2.json()["id"]
+
+    # Mark t2 done
+    client.patch(f"/api/tasks/{t2_id}", headers=headers, json={"status": "done"})
+
+    # Check stats
+    stats = client.get("/api/tasks/stats", headers=headers).json()
+    assert stats["total_tasks"] == 2
+    assert stats["todo_tasks"] == 1
+    assert stats["done_tasks"] == 1
+    assert stats["completion_rate"] == 50.0
+    assert stats["total_subtasks"] == 2
+
+    # Toggle pin on t1
+    pin_res = client.post(f"/api/tasks/{t1_id}/pin", headers=headers)
+    assert pin_res.status_code == 200
+    assert pin_res.json()["is_pinned"] is False
+
+    # Filter by tag
+    tag_res = client.get("/api/tasks?tag=Работа", headers=headers)
+    assert len(tag_res.json()) == 1
+    assert tag_res.json()[0]["id"] == t1_id
+
+    # Clear completed
+    clear_res = client.post("/api/tasks/clear-completed", headers=headers)
+    assert clear_res.status_code == 200
+    assert clear_res.json()["deleted_count"] == 1
+
+    # Remaining tasks
+    rem = client.get("/api/tasks", headers=headers).json()
+    assert len(rem) == 1
+    assert rem[0]["id"] == t1_id
+
+def test_smart_assist_endpoint(client):
+    reg = client.post("/api/auth/register", json={
+        "email": "user_smart@example.com",
+        "password": "password_smart"
+    })
+    token = reg.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    res = client.post("/api/ai/smart-assist", headers=headers, json={
+        "title": "Оплатить транспортный налог через Госуслуги"
+    })
+    assert res.status_code == 200
+    data = res.json()
+    assert "description" in data
+    assert len(data["subtasks"]) >= 2
+    assert data["suggested_priority"] in ["urgent", "high"]
+    assert "Финансы" in data["suggested_tags"] or len(data["suggested_tags"]) > 0
+    assert data["is_fallback"] is True
+
 

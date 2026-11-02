@@ -49,32 +49,32 @@ export const AuthModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
-      <div className="w-full max-w-md bg-white dark:bg-[#12141a] border border-zinc-200 dark:border-white/[0.1] rounded-2xl shadow-2xl p-6 sm:p-8 space-y-6">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
+      <div className="w-full max-w-md bg-md-surface-container-low border border-md-outline-variant/30 rounded-[28px] shadow-2xl p-6 sm:p-8 space-y-6 animate-pop-in">
         {/* Brand header */}
         <div className="text-center space-y-2">
-          <div className="inline-flex h-12 w-12 rounded-2xl bg-zinc-100 dark:bg-[#1a1d26] border border-zinc-200 dark:border-white/[0.1] items-center justify-center shadow-lg shadow-emerald-500/10 mb-1">
-            <AppLogo className="h-7 w-7" />
+          <div className="inline-flex h-14 w-14 rounded-2xl bg-md-surface-container border border-md-outline-variant/30 items-center justify-center shadow-xs mb-1">
+            <AppLogo className="h-8 w-8" />
           </div>
-          <h2 className="text-xl font-bold tracking-tight text-zinc-900 dark:text-white">
+          <h2 className="text-xl font-bold tracking-tight text-md-on-surface">
             {isRegister ? 'Регистрация' : 'Вход в TaskTracker AI'}
           </h2>
-          <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          <p className="text-xs text-md-on-surface-variant">
             {isRegister
               ? 'Создайте аккаунт для синхронизации ваших задач'
-              : 'Войдите, чтобы получить доступ к своим проектам и AI-инструментам'}
+              : 'Войдите для доступа к своим задачам и AI-ассистенту'}
           </p>
         </div>
 
-        {/* Tabs */}
-        <div className="flex bg-zinc-100 dark:bg-[#18181c] p-1 rounded-xl border border-zinc-200 dark:border-white/[0.06]">
+        {/* Tabs: M3 Segmented Button */}
+        <div className="flex bg-md-surface-container p-1 rounded-full border border-md-outline-variant/20">
           <button
             type="button"
             onClick={() => setIsRegister(false)}
-            className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+            className={`flex-1 py-2 text-xs font-semibold rounded-full transition-all ${
               !isRegister
-                ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm'
-                : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                ? 'bg-md-surface text-md-on-surface shadow-xs font-bold'
+                : 'text-md-on-surface-variant hover:text-md-on-surface'
             }`}
           >
             Вход
@@ -82,10 +82,10 @@ export const AuthModal: React.FC = () => {
           <button
             type="button"
             onClick={() => setIsRegister(true)}
-            className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+            className={`flex-1 py-2 text-xs font-semibold rounded-full transition-all ${
               isRegister
-                ? 'bg-white dark:bg-zinc-800 text-zinc-900 dark:text-white shadow-sm'
-                : 'text-zinc-500 hover:text-zinc-900 dark:hover:text-white'
+                ? 'bg-md-surface text-md-on-surface shadow-xs font-bold'
+                : 'text-md-on-surface-variant hover:text-md-on-surface'
             }`}
           >
             Регистрация
@@ -95,19 +95,23 @@ export const AuthModal: React.FC = () => {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">Email адрес</label>
+            <label className="block text-xs font-semibold text-md-on-surface-variant mb-1.5">
+              Email адрес
+            </label>
             <input
               type="email"
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@example.com"
-              className="w-full bg-zinc-100 dark:bg-[#18181c] border border-zinc-300 dark:border-white/[0.08] focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-xs text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 outline-none transition-all"
+              className="w-full bg-md-surface-container rounded-2xl border border-md-outline-variant/30 px-4 py-3 text-xs text-md-on-surface placeholder:text-md-on-surface-variant/50 outline-none focus:ring-2 focus:ring-md-primary/40 focus:border-md-primary transition-all"
             />
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-zinc-700 dark:text-zinc-300 mb-1.5">Пароль</label>
+            <label className="block text-xs font-semibold text-md-on-surface-variant mb-1.5">
+              Пароль
+            </label>
             <input
               type="password"
               required
@@ -115,39 +119,39 @@ export const AuthModal: React.FC = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Минимум 6 символов"
-              className="w-full bg-zinc-100 dark:bg-[#18181c] border border-zinc-300 dark:border-white/[0.08] focus:border-emerald-500 rounded-xl px-3.5 py-2.5 text-xs text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 outline-none transition-all"
+              className="w-full bg-md-surface-container rounded-2xl border border-md-outline-variant/30 px-4 py-3 text-xs text-md-on-surface placeholder:text-md-on-surface-variant/50 outline-none focus:ring-2 focus:ring-md-primary/40 focus:border-md-primary transition-all"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50 active:scale-[0.99]"
+            className="w-full flex items-center justify-center gap-2 py-3 rounded-full bg-md-primary text-md-on-primary text-xs font-bold shadow-md hover:shadow-lg active:scale-[0.98] transition-all disabled:opacity-50"
           >
             {loading ? (
               <Loader2 className="w-4 h-4 animate-spin" />
             ) : (
               <>
                 <span>{isRegister ? 'Зарегистрироваться' : 'Войти'}</span>
-                <ArrowRight className="w-3.5 h-3.5" />
+                <ArrowRight className="w-4 h-4" />
               </>
             )}
           </button>
         </form>
 
         {/* Quick Demo Access */}
-        <div className="pt-2 border-t border-zinc-200 dark:border-white/[0.06] text-center space-y-3">
+        <div className="pt-2 border-t border-md-outline-variant/15 text-center space-y-3">
           <button
             type="button"
             onClick={handleDemoLogin}
             disabled={loading}
-            className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-white/[0.04] dark:hover:bg-white/[0.08] border border-zinc-200 dark:border-white/[0.08] text-xs text-zinc-700 dark:text-zinc-300 transition-all font-medium"
+            className="w-full flex items-center justify-center gap-2 py-2.5 rounded-full bg-md-surface-container hover:bg-md-surface-container-high border border-md-outline-variant/30 text-xs text-md-on-surface transition-all font-semibold active:scale-[0.98]"
           >
-            <Sparkles className="w-3.5 h-3.5 text-emerald-500" />
+            <Sparkles className="w-3.5 h-3.5 text-md-primary" />
             <span>Войти в 1 клик (Демо-аккаунт)</span>
           </button>
 
-          <p className="text-[11px] text-zinc-500 flex items-center justify-center gap-1">
+          <p className="text-[11px] text-md-on-surface-variant flex items-center justify-center gap-1.5">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
             <span>JWT шифрование + защищенная база данных</span>
           </p>

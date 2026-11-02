@@ -10,6 +10,8 @@ from app.schemas import (
     AIDeadlineResponse,
     AIPrioritizeRequest,
     AIPrioritizeResponse,
+    AISmartAssistRequest,
+    AISmartAssistResponse,
 )
 from app.services.ai_service import AIService
 
@@ -57,5 +59,16 @@ async def prioritize_task(
     return await AIService.prioritize(
         title=payload.title,
         description=payload.description,
+        api_key=payload.api_key,
+    )
+
+@router.post("/smart-assist", response_model=AISmartAssistResponse, summary="Комплексный AI ассистент для задачи (описание + чеклист + дедлайн + приоритет + теги)")
+async def smart_assist_task(
+    payload: AISmartAssistRequest,
+    current_user: User = Depends(get_current_user),
+):
+    return await AIService.smart_assist(
+        title=payload.title,
+        context=payload.context,
         api_key=payload.api_key,
     )

@@ -40,18 +40,16 @@ export const SubtaskChecklist: React.FC<SubtaskChecklistProps> = ({
       {/* Progress Bar Header */}
       {totalCount > 0 && (
         <div className="space-y-1 min-w-0 w-full">
-          <div className="flex items-center justify-between text-[11px] text-zinc-500 dark:text-zinc-400">
+          <div className="flex items-center justify-between text-[11px] text-md-on-surface-variant">
             <span className="flex items-center gap-1 font-medium">
-              <CheckCircle2 className="w-3 h-3 text-emerald-500" />
+              <CheckCircle2 className="w-3 h-3 text-md-primary" />
               Подзадачи ({completedCount}/{totalCount})
             </span>
-            <span className="font-semibold text-zinc-700 dark:text-zinc-300">{progressPercent}%</span>
+            <span className="font-semibold text-md-on-surface">{progressPercent}%</span>
           </div>
-          <div className="w-full h-1.5 bg-zinc-200 dark:bg-white/[0.08] rounded-full overflow-hidden">
+          <div className="w-full h-1.5 bg-md-surface-container rounded-full overflow-hidden">
             <div
-              className={`h-full transition-all duration-500 ease-out rounded-full ${
-                progressPercent === 100 ? 'bg-emerald-500' : 'bg-emerald-600 dark:bg-emerald-400'
-              }`}
+              className="h-full transition-all duration-500 ease-out rounded-full bg-md-primary"
               style={{ width: `${progressPercent}%` }}
             />
           </div>
@@ -63,7 +61,7 @@ export const SubtaskChecklist: React.FC<SubtaskChecklistProps> = ({
         {subtasks.map((st) => (
           <div
             key={st.id}
-            className="group flex items-center justify-between gap-2 p-1.5 rounded-lg hover:bg-zinc-100/80 dark:hover:bg-white/[0.05] transition-all duration-200 min-w-0 w-full"
+            className="group flex items-center justify-between gap-2 p-1.5 rounded-xl hover:bg-md-surface-container transition-all duration-200 min-w-0 w-full"
           >
             <div
               onClick={() => onToggle(taskId, st.id, st.is_completed)}
@@ -78,10 +76,10 @@ export const SubtaskChecklist: React.FC<SubtaskChecklistProps> = ({
               className="flex items-center gap-2.5 flex-1 min-w-0 cursor-pointer select-none overflow-hidden active:scale-[0.99] transition-transform"
             >
               <div
-                className={`w-4 h-4 rounded shrink-0 flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-90 ${
+                className={`w-4 h-4 rounded-md shrink-0 flex items-center justify-center transition-all duration-200 hover:scale-110 active:scale-90 ${
                   st.is_completed
-                    ? 'bg-emerald-600 text-white border border-emerald-500 scale-100'
-                    : 'border border-zinc-400 dark:border-zinc-600 hover:border-emerald-500 dark:hover:border-emerald-400 bg-transparent'
+                    ? 'bg-md-primary text-md-on-primary border border-md-primary scale-100'
+                    : 'border border-md-outline-variant hover:border-md-primary bg-transparent'
                 }`}
               >
                 {st.is_completed && <Check className="w-3 h-3 stroke-[3] animate-pop-in" />}
@@ -92,8 +90,8 @@ export const SubtaskChecklist: React.FC<SubtaskChecklistProps> = ({
                   truncateText ? 'truncate' : 'break-words'
                 } ${
                   st.is_completed
-                    ? 'line-through text-zinc-400 dark:text-zinc-500'
-                    : 'text-zinc-800 dark:text-zinc-200 group-hover:text-zinc-950 dark:group-hover:text-white'
+                    ? 'line-through text-md-on-surface-variant/50'
+                    : 'text-md-on-surface group-hover:text-md-primary'
                 }`}
               >
                 {st.title}
@@ -105,7 +103,7 @@ export const SubtaskChecklist: React.FC<SubtaskChecklistProps> = ({
                 e.stopPropagation();
                 onDelete(taskId, st.id);
               }}
-              className="opacity-70 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 text-zinc-400 hover:text-rose-500 active:scale-90 hover:scale-110 p-1 rounded transition-all shrink-0"
+              className="opacity-70 group-hover:opacity-100 sm:opacity-0 sm:group-hover:opacity-100 text-md-on-surface-variant hover:text-rose-500 active:scale-90 p-1 rounded-full transition-all shrink-0"
               title="Удалить подзадачу"
               aria-label="Удалить подзадачу"
             >
@@ -124,11 +122,11 @@ export const SubtaskChecklist: React.FC<SubtaskChecklistProps> = ({
             onChange={(e) => setNewTitle(e.target.value)}
             placeholder="Название шага..."
             autoFocus
-            className="flex-1 min-w-0 bg-zinc-100 dark:bg-[#0e1015] border border-zinc-300 dark:border-white/[0.1] rounded-lg px-2.5 py-1 text-xs text-zinc-900 dark:text-white placeholder-zinc-400 dark:placeholder-zinc-500 outline-none focus:border-emerald-500"
+            className="flex-1 min-w-0 bg-md-surface-container border border-md-outline-variant/30 rounded-xl px-3 py-1.5 text-xs text-md-on-surface placeholder:text-md-on-surface-variant/50 outline-none focus:border-md-primary"
           />
           <button
             type="submit"
-            className="px-2.5 py-1 text-xs bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium shrink-0"
+            className="px-3 py-1.5 text-xs bg-md-primary-container text-md-on-primary-container rounded-xl font-semibold shrink-0"
           >
             Добавить
           </button>
@@ -138,7 +136,7 @@ export const SubtaskChecklist: React.FC<SubtaskChecklistProps> = ({
               setIsAdding(false);
               setNewTitle('');
             }}
-            className="px-2 py-1 text-xs text-zinc-400 hover:text-zinc-600 dark:hover:text-white shrink-0"
+            className="px-2 py-1.5 text-xs text-md-on-surface-variant hover:text-md-on-surface shrink-0"
           >
             Отмена
           </button>
@@ -147,7 +145,7 @@ export const SubtaskChecklist: React.FC<SubtaskChecklistProps> = ({
         <button
           type="button"
           onClick={() => setIsAdding(true)}
-          className="flex items-center gap-1.5 text-[11px] text-zinc-500 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium py-1 transition-colors"
+          className="flex items-center gap-1.5 text-[11px] text-md-primary hover:underline font-semibold py-1 transition-colors"
         >
           <Plus className="w-3.5 h-3.5" />
           <span>Добавить пункт</span>
