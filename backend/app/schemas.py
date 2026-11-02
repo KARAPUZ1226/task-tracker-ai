@@ -74,6 +74,7 @@ class TaskBase(BaseModel):
         return []
 
 class TaskCreate(TaskBase):
+    status: Optional[StatusType] = "todo"
     subtasks: Optional[List[str]] = Field(default_factory=list, description="Optional initial subtask titles")
 
 class TaskUpdate(BaseModel):

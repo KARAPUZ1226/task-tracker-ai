@@ -40,6 +40,7 @@ export interface TaskCreatePayload {
   title: string;
   description?: string;
   priority: Priority;
+  status?: Status;
   deadline?: string;
   tags?: string[];
   is_pinned?: boolean;

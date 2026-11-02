@@ -83,6 +83,21 @@ export const App: React.FC = () => {
     return Array.from(tagSet);
   }, [tasks]);
 
+  const columnCounts = useMemo(() => {
+    if (stats && !debouncedSearch && !selectedTag && priorityFilter === 'all') {
+      return {
+        todo: stats.todo_tasks,
+        in_progress: stats.in_progress_tasks,
+        done: stats.done_tasks,
+      };
+    }
+    return {
+      todo: tasks.filter((t) => t.status === 'todo').length,
+      in_progress: tasks.filter((t) => t.status === 'in_progress').length,
+      done: tasks.filter((t) => t.status === 'done').length,
+    };
+  }, [stats, debouncedSearch, selectedTag, priorityFilter, tasks]);
+
   const loadTasksAndStats = useCallback(async () => {
     if (!user) return;
     setLoadingTasks(true);
@@ -166,6 +181,7 @@ export const App: React.FC = () => {
         title: data.title,
         description: data.description || undefined,
         priority: data.priority,
+        status: data.status,
         deadline: data.deadline || undefined,
         tags: data.tags,
         is_pinned: data.is_pinned,
@@ -332,6 +348,67 @@ export const App: React.FC = () => {
     setSortBy('default');
   };
 
+  const handleSeedDemoTasks = async () => {
+    try {
+      setLoadingTasks(true);
+      const demoData: {
+        title: string;
+        description: string;
+        priority: Priority;
+        status: Status;
+        tags: string[];
+        is_pinned: boolean;
+        subtasks: string[];
+      }[] = [
+        {
+          title: '✨ Попробовать AI Smart Assist для декомпозиции',
+          description: '### Умный AI-ассистент\\n- Откройте эту задачу\\n- Измените название на любую цель\\n- Нажмите **✨ Умное заполнение** для мгновенной генерации структуры',
+          priority: 'high',
+          status: 'todo',
+          tags: ['AI', 'Обучение'],
+          is_pinned: true,
+          subtasks: ['Оценить автогенерацию описания', 'Проверить декомпозицию на шаги', 'Добавить свои теги'],
+        },
+        {
+          title: '🚀 Проверить Drag-and-Drop и перенос статусов',
+          description: 'Перемещайте задачи между колонками перетаскиванием или кнопкой в правом нижнем углу карточки.',
+          priority: 'medium',
+          status: 'in_progress',
+          tags: ['Работа', 'IT'],
+          is_pinned: false,
+          subtasks: ['Перетащить карточку в другую колонку', 'Отметить чекбокс подзадачи', 'Переключить вид на Список'],
+        },
+        {
+          title: '🎉 Оценить Material You дизайн и светлую/тёмную тему',
+          description: 'Интерфейс поддерживает адаптивные цвета Material Design 3, плавные переходы тем и аналитику продуктивности.',
+          priority: 'low',
+          status: 'done',
+          tags: ['Дизайн'],
+          is_pinned: false,
+          subtasks: ['Переключить тему в шапке', 'Оценить прогресс-бар продуктивности'],
+        },
+      ];
+
+      for (const t of demoData) {
+        await api.createTask({
+          title: t.title,
+          description: t.description,
+          priority: t.priority,
+          status: t.status,
+          tags: t.tags,
+          is_pinned: t.is_pinned,
+          subtasks: t.subtasks,
+        });
+      }
+      toast.success('Демонстрационные задачи успешно добавлены!');
+      await loadTasksAndStats();
+    } catch (err: any) {
+      toast.error(err.message || 'Ошибка добавления демонстрационных задач');
+    } finally {
+      setLoadingTasks(false);
+    }
+  };
+
   const hasActiveFilters = Boolean(
     search || statusFilter !== 'all' || priorityFilter !== 'all' || selectedTag || sortBy !== 'default'
   );
@@ -352,21 +429,6 @@ export const App: React.FC = () => {
       </>
     );
   }
-
-  const columnCounts = useMemo(() => {
-    if (stats && !debouncedSearch && !selectedTag && priorityFilter === 'all') {
-      return {
-        todo: stats.todo_tasks,
-        in_progress: stats.in_progress_tasks,
-        done: stats.done_tasks,
-      };
-    }
-    return {
-      todo: tasks.filter((t) => t.status === 'todo').length,
-      in_progress: tasks.filter((t) => t.status === 'in_progress').length,
-      done: tasks.filter((t) => t.status === 'done').length,
-    };
-  }, [stats, debouncedSearch, selectedTag, priorityFilter, tasks]);
 
   return (
     <div className="min-h-screen flex flex-col bg-md-surface text-md-on-surface transition-colors duration-300">
@@ -419,6 +481,8 @@ export const App: React.FC = () => {
           <KanbanBoard
             tasks={tasks}
             activeColumn={statusFilter}
+            hasActiveFilters={hasActiveFilters}
+            onSeedDemoTasks={handleSeedDemoTasks}
             onViewTask={handleOpenView}
             onEditTask={(task) => {
               setTaskToEdit(task);
@@ -439,6 +503,7 @@ export const App: React.FC = () => {
         ) : (
           <ListView
             tasks={tasks}
+            onSeedDemoTasks={handleSeedDemoTasks}
             onViewTask={handleOpenView}
             onEditTask={(task) => {
               setTaskToEdit(task);

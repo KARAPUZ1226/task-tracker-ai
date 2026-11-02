@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Task, Status } from '../types';
 import { TaskCard } from './TaskCard';
-import { Circle, Clock, CheckCircle2, Plus } from 'lucide-react';
+import { Circle, Clock, CheckCircle2, Plus, Sparkles } from 'lucide-react';
 
 interface KanbanBoardProps {
   tasks: Task[];
@@ -15,11 +15,15 @@ interface KanbanBoardProps {
   onDeleteSubtask: (taskId: number, subtaskId: number) => void;
   onOpenCreateWithStatus: (status: Status) => void;
   activeColumn?: Status | 'all';
+  hasActiveFilters?: boolean;
+  onSeedDemoTasks?: () => void;
 }
 
 export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   tasks,
   activeColumn = 'all',
+  hasActiveFilters = false,
+  onSeedDemoTasks,
   onViewTask,
   onEditTask,
   onDeleteTask,
@@ -63,11 +67,43 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
   const getTasksForColumn = (status: Status) => tasks.filter((t) => t.status === status);
 
   return (
-    <div
-      className={`grid ${
-        activeColumn === 'all' ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 max-w-2xl mx-auto'
-      } gap-6 items-start pb-24`}
-    >
+    <>
+      {tasks.length === 0 && !hasActiveFilters && onSeedDemoTasks && (
+        <div className="mb-6 p-4 sm:p-5 rounded-3xl bg-md-surface-container-low border border-md-outline-variant/30 flex flex-col sm:flex-row items-center justify-between gap-4 animate-fade-in shadow-xs">
+          <div className="flex items-center gap-3.5 text-left">
+            <div className="h-11 w-11 rounded-2xl bg-md-primary/10 flex items-center justify-center text-md-primary shrink-0 border border-md-primary/20">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-semibold text-md-on-surface">Ваш список задач пока пуст</h3>
+              <p className="text-xs text-md-on-surface-variant">Создайте свою первую задачу или загрузите демонстрационные примеры в 1 клик</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0 justify-end">
+            <button
+              type="button"
+              onClick={() => onOpenCreateWithStatus('todo')}
+              className="flex-1 sm:flex-initial px-4 py-2.5 rounded-full text-xs font-semibold bg-md-surface-container hover:bg-md-surface-container-high border border-md-outline-variant/30 text-md-on-surface transition-all active:scale-95"
+            >
+              + Новая задача
+            </button>
+            <button
+              type="button"
+              onClick={onSeedDemoTasks}
+              className="flex-1 sm:flex-initial px-4 py-2.5 rounded-full text-xs font-semibold bg-md-primary text-md-on-primary hover:shadow-md transition-all active:scale-95 flex items-center justify-center gap-1.5"
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>✨ Примеры задач</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div
+        className={`grid ${
+          activeColumn === 'all' ? 'grid-cols-1 md:grid-cols-3' : 'grid-cols-1 max-w-2xl mx-auto'
+        } gap-6 items-start pb-24`}
+      >
       {visibleColumns.map((col) => {
         const colTasks = getTasksForColumn(col.id);
         const isDropActive = dragOverColumn === col.id;
@@ -159,5 +195,6 @@ export const KanbanBoard: React.FC<KanbanBoardProps> = ({
         );
       })}
     </div>
+    </>
   );
 };

@@ -151,7 +151,7 @@ def create_task(
         title=clean_title,
         description=task_in.description.strip() if (task_in.description and task_in.description.strip()) else None,
         priority=task_in.priority,
-        status="todo",
+        status=task_in.status or "todo",
         deadline=task_in.deadline,
         tags=tags_str,
         is_pinned=task_in.is_pinned or False,
